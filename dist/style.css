@@ -11,3 +11,5 @@ body[data-view=practice]{background:#fff}.performance-main{max-width:1056px;marg
 .audio-options .mic-toggle{min-height:44px}.score-bar text,.score-system text{font-family:-apple-system,BlinkMacSystemFont,sans-serif}.score-bar [data-role=time-signature] text,.score-system [data-role=time-signature] text{font-family:serif}
 @media(max-width:640px){.pattern-diagram.compact img{width:154px;height:53px}}
 @media(max-width:350px){.pattern-diagram.compact img{width:142px;height:49px}}
+/* The application lesson introduces choices, not the currently selected shape. */
+.intro-visual.pattern-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 4px;padding:12px 6px}.pattern-options>h2{grid-column:1/-1;font-size:.8125rem}.intro-visual.pattern-options .pattern-diagram{flex-direction:column;gap:0;min-width:0}.intro-visual.pattern-options .pattern-diagram img{width:100%;height:auto}.intro-visual.pattern-options .pattern-diagram>div{text-align:center}.intro-visual.pattern-options .pattern-diagram strong{font-size:1.125rem}.intro-visual.pattern-options .pattern-diagram strong span{display:none}.intro-visual.pattern-options .pattern-diagram p{display:none}

@@ -1,0 +1,48 @@
+{
+  "results": [
+    {
+      "engine": "chrome",
+      "width": 320,
+      "height": 568,
+      "buttonBottom": 668.640625,
+      "threeChoices": true
+    },
+    {
+      "engine": "chrome",
+      "width": 390,
+      "height": 740,
+      "buttonBottom": 652.4375,
+      "threeChoices": true
+    },
+    {
+      "engine": "chrome",
+      "width": 1280,
+      "height": 800,
+      "buttonBottom": 672.75,
+      "threeChoices": true
+    },
+    {
+      "engine": "webkit",
+      "width": 320,
+      "height": 568,
+      "buttonBottom": 670.09375,
+      "threeChoices": true
+    },
+    {
+      "engine": "webkit",
+      "width": 390,
+      "height": 740,
+      "buttonBottom": 653.921875,
+      "threeChoices": true
+    },
+    {
+      "engine": "webkit",
+      "width": 1280,
+      "height": 800,
+      "buttonBottom": 672.734375,
+      "threeChoices": true
+    }
+  ],
+  "selectionPreserved": true,
+  "fixedShapeLessonUnchanged": true
+}

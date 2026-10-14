@@ -14,6 +14,8 @@
 
 `node verify.mjs` と `node extension-check.mjs` は教材、音程、譜面、音処理を検査します。`validation/check-ui.mjs` はローカルの既存Playwright環境でChrome・WebKitを検証します。結果は `validation/ui-results.json`。
 
+`node validation/check-natural-layout.mjs` は練習選択の譜面と操作を検証します。音符の縦横比・表示の欠け・五線の横幅・見出しの整列を、ChromeとWebKit、320〜1280px幅、24メニューと4本の弦で確認します。
+
 演奏画面は通常文字サイズで320×568から検証。全体の楽譜はその下に続きます。文字拡大では縦に伸びます。iPhone実機・実バイオリンの演奏判定は未検証です。
 
 ## 原本と設計

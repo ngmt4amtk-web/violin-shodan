@@ -67,29 +67,43 @@ export function renderScore(notes,settings={},group=0){
 }
 
 // 連続した五線に複数小節を組む。字形・音高・加線は従来の共通描画を使う。
-export function renderSystems(notes,settings={},barsPerSystem=3){
+export function renderSystems(notes,settings={},barsPerSystem=3,layout={}){
  const bars=[...new Set(notes.map(n=>n.bar))],systems=[];
+ // プレビューは、加線・下向きの符幹・スラーに必要な余白だけを残す。
+ const namesY=layout.compact?Math.max(118,...notes.filter(n=>!n.rest).map(n=>{
+  const tones=n.chord||[n],steps=tones.map(t=>t.step);
+  let low=Math.max(...steps.map(step=>pitchY(90,step)));
+  if(n.beats<4&&(Math.min(...steps)+Math.max(...steps))/2>=4)low+=3.5*STAFF_SPACE;
+  if(n.slurStart)low=Math.max(low,112,pitchY(90,n.step)+18);
+  return low+18;
+ })):136;
+ const viewTop=layout.compact?7:0,viewHeight=namesY+10-viewTop;
+ // 低い音の加線が増えても縦に間延びしない、横長の組段にする。
+ const minimumWidth=Math.max(layout.minWidth||0,layout.compact?Math.ceil(viewHeight*3.1):0);
  for(let start=0;start<bars.length;start+=barsPerSystem){
   const group=bars.slice(start,start+barsPerSystem),bottom=90;
   const plans=group.map(bar=>({bar,ns:notes.filter(n=>n.bar===bar)}));
+  // 少ない音でも五線を横幅まで使う。字形の縦横比は変えず、小節の余白を広げる。
+  const naturalWidths=plans.map(plan=>Math.max(82,plan.ns.length*34+16));
+  const extra=Math.max(0,minimumWidth-86-naturalWidths.reduce((a,b)=>a+b,0))/plans.length;
   let cursor=72;
-  for(const plan of plans){plan.x=cursor;plan.width=Math.max(82,plan.ns.length*34+16);cursor+=plan.width;}
+  for(const [i,plan] of plans.entries()){plan.x=cursor;plan.width=naturalWidths[i]+extra;cursor+=plan.width;}
   const width=cursor+14;let backgrounds='',music='';
   for(const plan of plans){const {bar,ns,x,width:bw}=plan,meter=ns[0].meter||4,accidentals=new Map();
-   const noteX=n=>x+20+(n.start-ns[0].start)*(bw-32)/Math.max(ns.reduce((s,n)=>s+n.beats,0),meter);
+   const noteX=n=>ns.length===1?x+bw/2:x+20+(n.start-ns[0].start)*(bw-32)/Math.max(ns.reduce((s,n)=>s+n.beats,0),meter);
    music+=`<text x="${x+5}" y="19" font-size="10" fill="#697384">${bar+1}</text>`;
    for(const n of ns){const nx=noteX(n);
     backgrounds+=`<rect data-score-index="${n.index}" class="note-highlight" x="${nx-15}" y="23" width="30" height="99" rx="5" fill="transparent"/>`;
     const decorate=t=>{const a=t.alteration??(t.name.includes('♯')?1:t.name.includes('♭')?-1:0),prev=accidentals.get(t.step)||0;accidentals.set(t.step,a);return {...t,accidental:a===1?'sharp':a===-1?'flat':prev!==0?'natural':null};};
     const printed=n.rest?n:n.chord?{...n,chord:n.chord.map(decorate)}:decorate(n);
-    music+=`<g data-score-index="${n.index}">${noteGlyph(printed,nx,bottom,settings)}${settings.names!==false?`<text x="${nx}" y="136" text-anchor="middle" font-size="10" fill="#697384">${escapeHTML(n.rest?'休':n.chord?.map(z=>z.string).join('+')||n.string)}</text>`:''}</g>`;
+    music+=`<g data-score-index="${n.index}">${noteGlyph(printed,nx,bottom,settings)}${settings.names!==false?`<text x="${nx}" y="${namesY}" text-anchor="middle" font-size="10" fill="#697384">${escapeHTML(n.rest?'休':n.chord?.map(z=>z.string).join('+')||n.string)}</text>`:''}</g>`;
     if(n.slurStart){const next=ns.find(z=>z.index===n.index+1);if(next){const xx=noteX(next),y=Math.max(106,pitchY(bottom,n.step)+12,pitchY(bottom,next.step)+12);music+=`<path data-role="slur" d="M${nx} ${y}Q${(nx+xx)/2} ${y+12} ${xx} ${y}" fill="none" stroke="#697384" stroke-width="1.4"/>`;}}
    }
    music+=`<path data-role="barline" d="M${x+bw} 46V90" stroke="#657083" stroke-width="1.2"/>`;
   }
   const meter=plans[0].ns[0].meter||4;
-  systems.push(`<svg class="score-system" viewBox="0 0 ${width} 146" role="img" aria-label="${group[0]+1}から${group.at(-1)+1}小節">${backgrounds}${staffLines(width,bottom)}${clef(17,bottom)}${start===0?`<g data-role="time-signature" text-anchor="middle" font-family="serif" font-weight="700" font-size="23" fill="#202839"><text x="54" y="68">${meter}</text><text x="54" y="90">4</text></g>`:''}${music}</svg>`);
+  systems.push({width,label:`${group[0]+1}から${group.at(-1)+1}小節`,body:`${backgrounds}${staffLines(width,bottom)}${clef(17,bottom)}${start===0?`<g data-role="time-signature" text-anchor="middle" font-family="serif" font-weight="700" font-size="23" fill="#202839"><text x="54" y="68">${meter}</text><text x="54" y="90">4</text></g>`:''}${music}`});
  }
- const widest=Math.max(...systems.map(s=>Number(s.match(/viewBox="0 0 (\d+)/)[1])));
- return systems.map(s=>s.replace(/viewBox="0 0 \d+ 146"/,`viewBox="0 0 ${widest} 146"`)).join('');
+ const widest=Math.max(...systems.map(s=>s.width));
+ return systems.map(s=>`<svg class="score-system" viewBox="0 ${viewTop} ${svgNumber(widest)} ${svgNumber(viewHeight)}" role="img" aria-label="${s.label}">${s.body}</svg>`).join('');
 }

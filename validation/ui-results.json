@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-14T04:10:32.646Z",
+  "at": "2026-10-14T05:51:33.970Z",
   "base": "http://127.0.0.1:8773",
   "results": [
     "chrome: all 24 introduction / setup flows and bounded preview",
@@ -27,10 +27,10 @@
           "x": 12,
           "y": 146.421875,
           "width": 296,
-          "height": 184.578125,
+          "height": 173.578125,
           "top": 146.421875,
           "right": 308,
-          "bottom": 331,
+          "bottom": 320,
           "left": 12
         },
         "controls": {
@@ -45,10 +45,10 @@
         },
         "guide": {
           "x": 12,
-          "y": 388,
+          "y": 377,
           "width": 296,
-          "height": 88,
-          "top": 388,
+          "height": 99,
+          "top": 377,
           "right": 308,
           "bottom": 476,
           "left": 12
@@ -99,10 +99,10 @@
           "x": 14,
           "y": 150.578125,
           "width": 362,
-          "height": 258.421875,
+          "height": 247.421875,
           "top": 150.578125,
           "right": 376,
-          "bottom": 409,
+          "bottom": 398,
           "left": 14
         },
         "controls": {
@@ -117,10 +117,10 @@
         },
         "guide": {
           "x": 14,
-          "y": 466,
+          "y": 455,
           "width": 362,
-          "height": 92,
-          "top": 466,
+          "height": 103,
+          "top": 455,
           "right": 376,
           "bottom": 558,
           "left": 14
@@ -171,10 +171,10 @@
           "x": 14,
           "y": 150.578125,
           "width": 362,
-          "height": 348.421875,
+          "height": 337.421875,
           "top": 150.578125,
           "right": 376,
-          "bottom": 499,
+          "bottom": 488,
           "left": 14
         },
         "controls": {
@@ -189,10 +189,10 @@
         },
         "guide": {
           "x": 14,
-          "y": 556,
+          "y": 545,
           "width": 362,
-          "height": 92,
-          "top": 556,
+          "height": 103,
+          "top": 545,
           "right": 376,
           "bottom": 648,
           "left": 14
@@ -243,10 +243,10 @@
           "x": 14,
           "y": 150.578125,
           "width": 402,
-          "height": 540.421875,
+          "height": 529.421875,
           "top": 150.578125,
           "right": 416,
-          "bottom": 691,
+          "bottom": 680,
           "left": 14
         },
         "controls": {
@@ -261,10 +261,10 @@
         },
         "guide": {
           "x": 14,
-          "y": 748,
+          "y": 737,
           "width": 402,
-          "height": 92,
-          "top": 748,
+          "height": 103,
+          "top": 737,
           "right": 416,
           "bottom": 840,
           "left": 14
@@ -537,10 +537,10 @@
           "x": 12,
           "y": 146.421875,
           "width": 296,
-          "height": 184.578125,
+          "height": 173.578125,
           "top": 146.421875,
           "right": 308,
-          "bottom": 331,
+          "bottom": 320,
           "left": 12
         },
         "controls": {
@@ -555,10 +555,10 @@
         },
         "guide": {
           "x": 12,
-          "y": 388,
+          "y": 377,
           "width": 296,
-          "height": 88,
-          "top": 388,
+          "height": 99,
+          "top": 377,
           "right": 308,
           "bottom": 476,
           "left": 12
@@ -609,10 +609,10 @@
           "x": 14,
           "y": 150.578125,
           "width": 362,
-          "height": 258.421875,
+          "height": 247.421875,
           "top": 150.578125,
           "right": 376,
-          "bottom": 409,
+          "bottom": 398,
           "left": 14
         },
         "controls": {
@@ -627,10 +627,10 @@
         },
         "guide": {
           "x": 14,
-          "y": 466,
+          "y": 455,
           "width": 362,
-          "height": 92,
-          "top": 466,
+          "height": 103,
+          "top": 455,
           "right": 376,
           "bottom": 558,
           "left": 14
@@ -681,10 +681,10 @@
           "x": 14,
           "y": 150.578125,
           "width": 362,
-          "height": 348.421875,
+          "height": 337.421875,
           "top": 150.578125,
           "right": 376,
-          "bottom": 499,
+          "bottom": 488,
           "left": 14
         },
         "controls": {
@@ -699,10 +699,10 @@
         },
         "guide": {
           "x": 14,
-          "y": 556,
+          "y": 545,
           "width": 362,
-          "height": 92,
-          "top": 556,
+          "height": 103,
+          "top": 545,
           "right": 376,
           "bottom": 648,
           "left": 14
@@ -753,10 +753,10 @@
           "x": 14,
           "y": 150.578125,
           "width": 402,
-          "height": 540.421875,
+          "height": 529.421875,
           "top": 150.578125,
           "right": 416,
-          "bottom": 691,
+          "bottom": 680,
           "left": 14
         },
         "controls": {
@@ -771,10 +771,10 @@
         },
         "guide": {
           "x": 14,
-          "y": 748,
+          "y": 737,
           "width": 402,
-          "height": 92,
-          "top": 748,
+          "height": 103,
+          "top": 737,
           "right": 416,
           "bottom": 840,
           "left": 14

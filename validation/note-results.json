@@ -1,0 +1,25 @@
+[
+  {
+    "width": 320,
+    "colorScheme": "light",
+    "noOverflow": true
+  },
+  {
+    "width": 320,
+    "colorScheme": "dark",
+    "noOverflow": true
+  },
+  {
+    "width": 390,
+    "colorScheme": "light",
+    "noOverflow": true
+  },
+  {
+    "width": 390,
+    "colorScheme": "dark",
+    "noOverflow": true
+  },
+  {
+    "zoomSetup": true
+  }
+]

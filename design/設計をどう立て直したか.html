@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>弦しるべ — 設計をどう立て直したか</title>
+<style>
+/* ==== 提出標準v1.3 デザイントークン（批評班実測でAA検証済み） ====
+   accent=リンク用(カード面上でもAA 4.5:1合格: light 5.0 / dark 4.7)
+   series1=図の単系列用(datavizバリデータ両モード合格)
+   ※共用するとカード面AAと本文色との3:1差が両立しない→必ず分離+リンクは常時下線
+   ※light-dark()はiOS 17.5未満で全変数が死ぬため変数二重定義方式 */
+:root{
+  color-scheme: light dark;
+  --bg:#fcfcfb; --ink:#1d1d1f; --ink2:#52514e;
+  --accent:#1a66c4; --series1:#2a78d6;
+  --line:rgb(0 0 0 / 12%); --card:rgb(0 0 0 / 4%); --markbg:#fdf0c9;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1a1a19; --ink:#ececea; --ink2:#c3c2b7;
+    --accent:#4a93ea; --series1:#3987e5;
+    --line:rgb(255 255 255 / 14%); --card:rgb(255 255 255 / 5.5%); --markbg:#4a3f13;
+  }
+}
+*{box-sizing:border-box; min-width:0}
+html{width:100%; max-width:100%; overflow-x:hidden; -webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  font-size:17px; line-height:1.8; font-feature-settings:"palt";
+  width:100%; max-width:100%; overflow-x:hidden; overflow-x:clip}
+main{width:100%; max-width:36em; margin-inline:auto; padding:24px 20px 96px}
+h1,h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600}
+h1{font-size:1.55em; line-height:1.45; margin:.4em 0 .2em}
+h2{font-size:1.3em; line-height:1.5; margin:2.2em 0 .6em; padding-top:.9em; border-top:1px solid var(--line)}
+h3{font-size:1.06em; margin:1.6em 0 .4em}
+p{margin:.7em 0}
+ul,ol{padding-inline-start:1.4em; margin:.6em 0}
+li{margin:.28em 0}
+p,li,dd,dt,blockquote,figcaption,summary,a,code{overflow-wrap:anywhere}
+a{color:var(--accent); text-decoration:underline; text-decoration-thickness:from-font;
+  text-underline-offset:3px; text-decoration-color:color-mix(in srgb, currentColor 45%, transparent)}
+a:hover,a:focus-visible{text-decoration-color:currentColor}
+mark{background:var(--markbg); color:inherit; padding:0 .15em; border-radius:3px}
+strong{font-weight:600}
+.meta{color:var(--ink2); font-size:.88em; margin:0 0 1.4em}
+.tldr{border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:10px; padding:14px 18px; background:var(--card); margin:1.2em 0}
+.tldr .h{font-weight:600; font-size:.85em; letter-spacing:.06em; color:var(--accent); margin-bottom:.3em}
+.course{font-size:.88em; color:var(--ink2); margin:.8em 0 0}
+blockquote.cite{margin:1em 0; padding:12px 16px; border-left:3px solid var(--accent); background:var(--card); border-radius:0 10px 10px 0; font-size:.96em}
+blockquote.cite .src{display:block; margin-top:.4em; color:var(--ink2); font-size:.82em}
+nav.toc{border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin:1.4em 0; background:var(--card)}
+nav.toc .h{font-weight:600; font-size:.85em; letter-spacing:.06em; color:var(--ink2); margin-bottom:.4em}
+nav.toc ol{margin:0; padding-inline-start:1.5em}
+nav.toc li{margin:0}
+nav.toc li>a{display:block; padding:.45em 0 .05em; text-decoration-color:color-mix(in srgb, currentColor 30%, transparent)}
+nav.toc .d{display:block; color:var(--ink2); font-size:.86em; padding-bottom:.45em}
+.tocact{margin:.7em 0 .1em}
+.tocact button{font:inherit; font-size:.85em; min-height:44px; padding:0 16px;
+  border-radius:999px; border:1px solid var(--line); background:var(--bg); color:var(--ink2); cursor:pointer}
+details{border:1px solid var(--line); border-radius:10px; margin:.9em 0; background:var(--card)}
+details>summary{cursor:pointer; list-style:none; padding:11px 14px; min-height:44px;
+  display:flex; align-items:center; gap:.5em; font-size:.93em; color:var(--ink2); font-weight:500;
+  -webkit-tap-highlight-color:transparent}
+details>summary::before{content:"▸"; color:var(--accent); transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details>summary::-webkit-details-marker{display:none}
+details>.body{min-width:0; padding:2px 16px 12px; font-size:.95em}
+figure{margin:1.2em 0}
+figure img{max-width:100%; height:auto; border-radius:10px; border:1px solid var(--line); display:block}
+img,svg,video,canvas{max-width:100%}
+figcaption{font-size:.86em; color:var(--ink2); margin-top:.45em; line-height:1.6}
+.vidquote{border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--card); margin:1.2em 0}
+.vidquote figure{margin:0}
+.vidquote .sub{font-size:.92em; margin:.5em 2px 2px; padding-left:10px; border-left:3px solid var(--accent)}
+.tablewrap{width:100%; max-width:100%; margin:1em 0; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+table{border-collapse:collapse; width:100%; table-layout:fixed; font-size:.92em}
+th,td{padding:8px 12px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line); line-height:1.55}
+th,td{white-space:normal; overflow-wrap:anywhere; word-break:break-word}
+th{font-size:.88em; color:var(--ink2); font-weight:600}
+tr:last-child td{border-bottom:none}
+@media screen and (max-width:600px){
+  .tablewrap{border:0; border-radius:0; background:none}
+  .tablewrap table,.tablewrap tbody,.tablewrap tr,.tablewrap th,.tablewrap td{display:block; width:100%}
+  .tablewrap table{font-size:.94em}
+  .tablewrap thead{position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0}
+  .tablewrap tbody{display:grid; gap:12px}
+  .tablewrap tr{overflow:hidden; border:1px solid var(--line); border-radius:10px; background:var(--card)}
+  .tablewrap tbody th[scope="row"],.tablewrap td{padding:9px 12px; border-bottom:1px solid var(--line)}
+  .tablewrap tbody th[scope="row"]{font-size:.95em; color:var(--ink); background:var(--card)}
+  .tablewrap td::before{content:attr(data-label); display:block; margin-bottom:2px;
+    color:var(--ink2); font-size:.78em; font-weight:600; letter-spacing:.02em}
+  .tablewrap td[data-label=""]::before{content:none}
+  .tablewrap tr:last-child td:not(:last-child){border-bottom:1px solid var(--line)}
+  .tablewrap tr td:last-child{border-bottom:0}
+}
+.fumidai{margin:1.1em 0 0; padding:8px 14px; border-radius:8px; background:var(--card); font-size:.92em; color:var(--ink2)}
+.fumidai b{color:var(--ink); font-weight:600}
+.stepq{color:var(--ink2); font-size:.95em; margin:.2em 0 .8em}
+/* v1.1 段の中を刻む: 用語チップと「要するに」行 */
+dfn{font-style:normal; font-weight:600; text-decoration:underline dotted; text-decoration-color:var(--line); text-underline-offset:3px}
+.def{color:var(--ink2); font-size:.9em}
+.yosuruni{border-left:3px solid var(--line); padding:6px 12px; margin:.8em 0; color:var(--ink2); font-size:.95em}
+.yosuruni b{color:var(--ink); font-weight:600}
+.ba{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:1em 0}
+.ba>div{border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:.9em}
+.ba .h{font-size:.8em; font-weight:600; color:var(--ink2); margin-bottom:.3em}
+@media (max-width:520px){ .ba{grid-template-columns:1fr} }
+/* SVG図: 横幅360前後のモバイル用viewBoxを正本にし、情報量は高さで確保する。 */
+.chartwrap{width:100%; max-width:100%; overflow:visible}
+.chart{width:100%; max-width:100%; height:auto; display:block}
+.chart text{font-family:-apple-system,"Hiragino Sans",sans-serif}
+code{font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:.86em; background:var(--card);
+  padding:.1em .35em; border-radius:5px; word-break:break-word}
+pre{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px;
+  max-width:100%; overflow-x:hidden; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word;
+  tab-size:2; font-size:12.5px; line-height:1.6}
+pre code{font-size:inherit; background:none; padding:0}
+pre.wrap code{white-space:pre-wrap; word-break:break-word}
+footer{margin-top:3em; padding-top:1em; border-top:1px solid var(--line); color:var(--ink2); font-size:.84em}
+.js-only{display:none}
+html.js .js-only{display:block}
+@media screen and (max-width:520px){
+  main{padding:20px 16px 80px}
+}
+@media print{
+  :root{ color-scheme:light;
+    --bg:#fff; --ink:#000; --ink2:#3a3a3a; --accent:#0b3d91; --series1:#2a78d6;
+    --line:#b0b0b0; --card:#f4f4f4; --markbg:#ffe9a8; }
+  body{font-size:10.5pt; line-height:1.65; background:#fff; color:#000}
+  details{border:none; background:none}
+  details>summary{font-weight:600}
+  details::details-content{content-visibility:visible; block-size:auto}
+  h2,h3{break-after:avoid-page}
+  figure,.vidquote,.tldr,pre,tr{break-inside:avoid}
+  .tablewrap{overflow:visible; background:none}
+  pre{white-space:pre-wrap; word-break:break-word}
+  main a[href^="http"]::after{content:" (" attr(href) ")"; font-size:.8em; color:#555; word-break:break-all}
+  nav.toc a::after{content:none}
+}
+</style>
+</head>
+<body><main><h1>見た目を飾る前に、<br>弾くときの操作を減らす。</h1><p class="meta">弦しるべの設計判断 · 2026-10-14</p>
+<div class="tldr"><div class="h">今回の結論</div><ol><li>やり方・練習選択・演奏を、別の画面にした。</li><li>演奏の主要部分は1画面、全体の楽譜はその下へ。</li><li>接する指をつなぎ、譜面は連続した五線に組み直した。</li></ol><p class="course">30秒ならこの要点。理由は次の3節、出典と検証条件は付録へ。</p></div>
+<nav class="toc"><div class="h">読みたいところから</div><ol><li><a href="#critique">私が厳しい講評を受けたら、何を直すか</a></li><li><a href="#flow">画面を分け、比較する操作はまとめる</a></li><li><a href="#notation">譜面と指の形を、読めるまま小さくする</a></li><li><a href="#evidence">調査と検証の範囲</a></li></ol></nav>
+<h2 id="critique">1. 楽器を持った人を、画面の前に置く</h2><p>仮に「弓を持った手で、いったい何回スクロールさせるつもりなのか」と講評されたら、私なら配色案を増やす前に、演奏が止まる箇所を書き出す。</p><p>旧版は、説明、選択肢、指の図、長い譜面、再生操作を縦に積んでいた。個々の部品には意味があっても、弾く直前に必要なものを探す負担を利用者へ渡していた。新しい合否基準は、<strong>構えた後に画面を探し回らず、現在の音と次の音が分かるか</strong>にした。</p><p>「余白を減らして全部を小さくする案」と、「用途ごとに画面を分ける案」を比較した。前者は同時に見える項目が多いままで、縮小によって音符も操作も読みにくくなる。今回は後者を採った。</p><p>名称も「弦しるべ」に変えた。弦と指の置き場所、次の一音を示す役割を表す。</p>
+<h2 id="flow">2. 画面は3段階。選択肢を1問ずつには分けない</h2><p>教材を選んだ後、最初にやり方を示す。その次に弦・形・段と、実際に弾く譜面を見て選ぶ。最後に演奏画面へ進む。説明を読みながら演奏する必要がないよう、演奏中の文章は今の動作だけに絞った。</p><p>Appleの説明画面の指針は、必要な場面に短い説明を置き、操作しながら覚えられることを重視している。そこで長い説明を開始前に一括で読ませる構成を避けた。<a href="https://developer.apple.com/design/human-interface-guidelines/onboarding">Apple HIG: Onboarding</a>（ページ変更履歴2024-06-10、参照2026-10-14）。</p><p>ただし、弦と指の形と練習する段は、同じ画面に残した。これらは譜面を見比べながら何度も変更する項目だからだ。NN/gも、頻繁に往復して比べる項目を別の段階へ分けると、かえって操作が増えると説明している。<a href="https://www.nngroup.com/articles/progressive-disclosure/">Progressive Disclosure</a>（2006-12-03）。</p><p>演奏中は、今の1小節、次の音、拍、指の形、停止・お手本・手送りだけを主に置いた。forScoreの演奏モードが不要な操作を抑える方針を参考にした。ページ送りの方式そのものを移植したわけではない。<a href="https://forscore.co/kb/performance-mode/">forScore: Performance mode</a>（公開日不明、参照2026-10-14）。</p>
+<h2 id="notation">3. 小さくする対象は、意味のない重複</h2><p>練習選択では、小節ごとに独立していた五線をつなぎ、1〜2段で表示する。応用練習は段の選択の直下に、その段の譜面が出る。6小節を超える課題は冒頭の6小節だと明示し、全譜も開ける。</p><p>演奏画面では今の1小節を大きく保ち、次の音も同時に示す。音の選択背景は、五線・加線・音符の後ろへ描く。ト音記号と音符の輪郭は従来のBravuraを引き継いだ。</p><figure><img src="data:image/png;base64,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" alt="1、2と3、4と分かれ、2と3が青い一つの面でつながる" width="300" height="104"><figcaption>Astra Drawで制作した指の関係図。2と3を一つの面でつなぐ。手の形や指の実寸を表す図ではない。</figcaption></figure><p>指を等間隔に並べて「半音」と添えるだけでは、どこを近づけるかが図だけで伝わらない。今回は接する2本を一つの輪郭に入れ、ほかの間隔をあけた。色を見分けにくくても、まとまりの位置と数字で区別できる。</p><p>主なボタンは44 CSS px以上を目標にした。Appleの押せる領域を確保する方針を参考に、Web上では実際の座標も調べた。<a href="https://developer.apple.com/design/human-interface-guidelines/buttons">Apple HIG: Buttons</a>（ページ変更履歴2025-12-16、参照2026-10-14）。</p>
+<h2 id="evidence">付録 — 確認できたことと、まだ確かめていないこと</h2><p>通常文字サイズの演奏画面は320×568、390×650、390×740、430×932、横向き740×390、820×1180、1280×800で、主要操作の位置と横はみ出しを検査した。ChromeとWebKitの検査は、iPhone実機での演奏テストとは異なる。</p><p>文字を2倍にした場合は、1画面に押し込めず縦へ伸ばす。W3Cの指針に沿い、拡大時に文や操作を切り落として「スクロールなし」を守る設計にはしなかった。<a href="https://www.w3.org/WAI/WCAG22/Understanding/reflow.html">W3C: Reflow</a>（解説の公開日不明、参照2026-10-14。WCAG 2.2勧告2024-12-12）。</p><p>24課題の画面遷移、段の保持、マイク拒否後の開始、一時停止と再開、終了と繰り返しも確認した。マイクは端末内で処理し、練習履歴・録音・音声送信を追加していない。</p><p><strong>残る確認は、あなたが楽器を構えたときの見やすさと、実音のマイク判定。</strong>ブラウザ内の寸法検査だけで、譜面台からの可読性や演奏のしやすさを実証したとは言わない。次に直す判断材料は、装飾の好みだけでなく、止まった箇所・見失った音・押しにくかった操作になる。</p><footer>設計・実装・ブラウザ検証: Codex。既存のひと弓と教材の原本は保持。参考資料の内容と、今回の設計判断・検証結果を分けて記載した。</footer></main></body></html>

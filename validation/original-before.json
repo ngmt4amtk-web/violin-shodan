@@ -1,0 +1,16 @@
+{
+  "dist/score.mjs": "4a0e0bd228c1051e7f582238ea3790460750b068e59604b55d7083451068ee34",
+  "dist/index.html": "40bb71f9774448e73138911c4b8ca2880b3ad4d8578462e4d799a72fff955429",
+  "dist/glyphs.mjs": "74c66c2bc66fbb1cdc0c903ab0d2b9d286b5059ccaf84ada56766d872f1d1085",
+  "dist/repertoire.mjs": "b1f32f07ffc24e1cd463010a95911df393540a24b15ccc11492e54eab992af32",
+  "dist/engine.mjs": "fec3778c290e13141bcbfc5b18baa112212180091f5cc47782b82160b45b6107",
+  "dist/.nojekyll": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "dist/style.css": "edbe142968c8104e2ee6bb60f8c45881ee34c0ac644a8669ade06aec1b3594c7",
+  "dist/app.mjs": "22101c41dcf66fbe9eb2a16ddc7fffad3792f094d2846d903a32c593d10d8348",
+  "dist/manifest.webmanifest": "6a3b6434db50b8d144b3aa7e8cd860a79b9e0c802c5d8f087d6dcae8d8328afe",
+  "dist/content.mjs": "ed4ae7d2ed1adee3b3c4d06380d93731bd760725c9c7afe23b44c1eff60a97ac",
+  "dist/sw.js": "5060d3adbb5e2948e0c8e3ac5da4f7038e78ea2495667f43942b71acc687f520",
+  "dist/Bravura-OFL.txt": "c24929be7028026a65ee8894da1e3c36d2a4ccce0548d9ba8ba64509f46319ee",
+  "dist/assets/icon.svg": "0f77ec9b9b2ec9ac52e511651a6e5106807c0ca86650ad095a3b6c7efb779a50",
+  "dist/assets/violin.png": "61d989aeec4b9b5e95cd90aad474e9eced5344d1aee8e88c16484a6202c8b8b3"
+}

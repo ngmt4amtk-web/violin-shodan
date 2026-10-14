@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+validation/*.png
+portable/
+*.zip
+design/*.png
+tools/build-ui.py
+tools/ui.txt
+tools/transport.txt
+tools/options.txt

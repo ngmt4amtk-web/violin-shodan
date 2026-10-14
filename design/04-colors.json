@@ -1,0 +1,1 @@
+{"documentID": "draw_73c8b110-727e-49ac-b185-6b19ba4eeaa0", "expectedRevision": 5, "requestId": "04-colors", "label": "04-colors", "operations": [{"op": "set", "id": "finger2", "values": {"fill": "#3158B7", "stroke": "#3158B7"}}, {"op": "set", "id": "number2", "values": {"fill": "#FFFFFF"}}, {"op": "set", "id": "number3", "values": {"fill": "#FFFFFF"}}]}

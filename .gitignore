@@ -8,3 +8,4 @@ tools/build-ui.py
 tools/ui.txt
 tools/transport.txt
 tools/options.txt
+validation/quicklook/

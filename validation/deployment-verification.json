@@ -1,6 +1,6 @@
 {
   "url": "https://ngmt4amtk-web.github.io/genshirube/",
-  "checkedAt": "2026-10-14T05:22:22.060Z",
+  "checkedAt": "2026-10-14T05:55:04.697Z",
   "files": [
     {
       "path": "Bravura-OFL.txt",
@@ -9,8 +9,8 @@
     },
     {
       "path": "app.mjs",
-      "bytes": 36661,
-      "sha256": "2659b40ff11e5b611e5abf30ca74617b0f84c9481d1bab860d4402ee1eca80d2"
+      "bytes": 36742,
+      "sha256": "8c18d09a9aa18227da44199e65f4aab5ea11bd301aec6dd8cf64c31148f2985d"
     },
     {
       "path": "assets/icon.svg",
@@ -64,24 +64,26 @@
     },
     {
       "path": "score.mjs",
-      "bytes": 9122,
-      "sha256": "d4c842f8164bba5867dd7ff36bc2455eff1b6236371da828b1acc11ebb60281a"
+      "bytes": 10144,
+      "sha256": "d344217fa625cecab722be821550fa4f99c17061d72308c882b971b2c6861cf3"
     },
     {
       "path": "style.css",
-      "bytes": 25393,
-      "sha256": "c17f26734ec532b672f198940aac598e85c28056c6bcdfa54f956d9cd960112a"
+      "bytes": 25240,
+      "sha256": "925fd583757bf5df983288ff1c0187e5befc73a6e604ca020d6f38b8ffb88eeb"
     },
     {
       "path": "sw.js",
       "bytes": 911,
-      "sha256": "9d855a58b307b302aa2602242496cb3e51bbc284f360f63a4be2439acce382b2"
+      "sha256": "8c13ad0f9a37bbf9469e13ebae5019414dd49ec0635cfd9018d369846ce3274d"
     }
   ],
   "allPublicFileHashesMatched": true,
   "secureContext": true,
   "lessonCount": 24,
   "twoSystemPreview": true,
+  "naturalScorePreview": true,
+  "alignedSetupLabels": true,
   "performanceControlsFit390x740": true,
   "staffVisibleWithActiveNote": true,
   "offlineReloadAndPlayback": true,

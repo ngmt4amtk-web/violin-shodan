@@ -1,0 +1,13 @@
+// DOM・音声APIの小さな代役。画面の幾何や実音の検証には使わない。
+import fs from 'node:fs/promises';
+import vm from 'node:vm';
+const names=['intonation','repertoire','content','engine','settings','glyphs','score','app'];
+const source=(await Promise.all(names.map(n=>fs.readFile(new URL(`../dist/${n}.mjs`,import.meta.url),'utf8')))).map(s=>s.replace(/^import .*?;\s*$/gm,'').replace(/^export /gm,'')).join('\n');
+export function appHarness(saved='{}',storage=new Map([['violin-shodan-v1',saved]])){
+ const nodes=new Map(),listeners={},storageAccess=[];
+ const node=selector=>{if(!nodes.has(selector))nodes.set(selector,{dataset:{},style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},hidden:false,disabled:false,textContent:'',innerHTML:'',attributes:{},setAttribute(k,v){this.attributes[k]=v;},focus(){},scrollIntoView(){},value:''});return nodes.get(selector);};
+ const document={body:{dataset:{}},querySelector:node,querySelectorAll:selector=>selector==='[data-beat]'?[1,2,3,4].map(n=>{const el=node('beat'+n);el.dataset.beat=String(n);return el;}):[],addEventListener(name,fn){listeners[name]=fn;},hidden:false};
+ const context=vm.createContext({document,window:{scrollTo(){},addEventListener(){}},navigator:{onLine:true},location:{protocol:'file:'},localStorage:{getItem(k){storageAccess.push(['get',k]);return storage.get(k)??null;},setItem(k,v){storageAccess.push(['set',k]);storage.set(k,v);},removeItem(k){storageAccess.push(['remove',k]);storage.delete(k);},clear(){storageAccess.push(['clear']);storage.clear();}},setTimeout:()=>1,clearTimeout(){},setInterval:()=>1,clearInterval(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},console});
+ vm.runInContext(source+`\nconst sounds=[],clicks=[];audio.ctx={currentTime:0};audio.init=async()=>audio.ctx;audio.toneHz=(...args)=>sounds.push(args);audio.click=(...args)=>clicks.push(args);mic.start=async()=>true;let reading={rms:0,frequency:null,confidence:0};mic.read=()=>reading;globalThis.appTest={enterLesson,navigate,startPractice,pausePractice,resumePractice,advanceNote,renderSetup,renderHome,beginTransport,tick,observeMic,setTime(t){audio.ctx.currentTime=t;},setReading(r){reading=r;},setOptions(o){Object.assign(options,o);},state(){return {phase:practice?.phase,index:practice?.index,view,chapter,micState:judge.state,preferences,options,lessonId:lesson?.id,queue:practice?.queue,musicTime:practice?.musicTime,passed:practice?.passed?.size,sounds,clicks};}};`,context);
+ return {api:context.appTest,node,storage,storageAccess,async click(dataset){await listeners.click({target:{closest:()=>({dataset,disabled:false,hasAttribute:k=>Object.hasOwn(dataset,k.replace('data-',''))})}});},async change(el){await listeners.change({target:el});}};
+}

@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-15",
+  "status": "partial",
+  "commands_run": [
+    {
+      "command": "node verify.mjs",
+      "exit_code": 1,
+      "summary": "初回: 30/32。期待値の開放弦補正漏れと、DOM代役のhasAttribute不足を修正。"
+    },
+    {
+      "command": "node verify.mjs",
+      "exit_code": 0,
+      "summary": "修正後: 32/32。"
+    },
+    {
+      "command": "node extension-check.mjs",
+      "exit_code": 0,
+      "summary": "既存教材検査: 8/8。"
+    },
+    {
+      "command": "node extension-check.mjs",
+      "exit_code": 1,
+      "summary": "検査追加後: 10/11。1678.219Hzの合成波形を1683.378Hzと検出し、5¢の精度条件を超過。"
+    },
+    {
+      "command": "node extension-check.mjs",
+      "exit_code": 0,
+      "summary": "周期補間修正後: 11/11。合成波形390例が5¢以内。"
+    },
+    {
+      "command": "node verify.mjs",
+      "exit_code": 0,
+      "summary": "最終版: 32/32。全課題4/4・ランダム1000種・スラー0・8章・旧ID・数値移植・状態遷移・開始再開・保存設定・目標表とDESIGN節を確認。"
+    },
+    {
+      "command": "node extension-check.mjs",
+      "exit_code": 0,
+      "summary": "最終版: 11/11。原本指順、390波形、成功音/補助音、画面検査スクリプトの構文を確認。"
+    },
+    {
+      "command": "node build-portable.mjs",
+      "exit_code": 0,
+      "summary": "166210 bytes。単一HTMLの構文と保存後の読み戻しを確認。"
+    }
+  ],
+  "unmet": [
+    "合格条件3: node validation/check-natural-layout.mjs と node validation/check-ui.mjs は呼び出し側で実行。常設指示によりサーバー・GUIを起動していない。",
+    "iPhone Safari・本物のバイオリンでの音程判定、可読性、音量、残響は呼び出し側で実行。"
+  ],
+  "target_table": "README.md の目標表 / validation/intonation-targets.json",
+  "decisions": "DESIGN.md の2026-10-15 改修",
+  "portable_sha256": "bbbcfbf217ce589d82825da66e054ce8750fd6db7252702964c0b9a993562f8f",
+  "source_policy": "AnswerTuner・fuyomi・契約ファイルは読み取りのみ。コミット・push・ネットワーク・公開は実施していない。"
+}

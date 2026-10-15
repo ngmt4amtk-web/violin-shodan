@@ -1,8 +1,10 @@
 {
-  "at": "2026-10-14T05:51:33.970Z",
+  "at": "2026-10-15T06:28:31.104Z",
   "base": "http://127.0.0.1:8773",
   "results": [
-    "chrome: all 24 introduction / setup flows and bounded preview",
+    "chrome: all 47 introduction / setup flows and bounded preview",
+    "chrome: chapters 01–08, common menus and add-finger sublists",
+    "chrome: A-only 34low on every common exercise, returning from child lesson",
     {
       "engine": "chrome",
       "viewport": [
@@ -72,6 +74,36 @@
           "right": 308,
           "bottom": 476,
           "left": 12
+        },
+        "next": {
+          "x": 220.734375,
+          "y": 100.5625,
+          "width": 87.265625,
+          "height": 40.296875,
+          "top": 100.5625,
+          "right": 308,
+          "bottom": 140.859375,
+          "left": 220.734375
+        },
+        "beat": {
+          "x": 193,
+          "y": 327.5,
+          "width": 115,
+          "height": 25,
+          "top": 327.5,
+          "right": 308,
+          "bottom": 352.5,
+          "left": 193
+        },
+        "bar": {
+          "x": 266.671875,
+          "y": 71,
+          "width": 41.328125,
+          "height": 20,
+          "top": 71,
+          "right": 308,
+          "bottom": 91,
+          "left": 266.671875
         }
       }
     },
@@ -144,6 +176,36 @@
           "right": 376,
           "bottom": 558,
           "left": 14
+        },
+        "next": {
+          "x": 288.734375,
+          "y": 102.640625,
+          "width": 87.265625,
+          "height": 40.296875,
+          "top": 102.640625,
+          "right": 376,
+          "bottom": 142.9375,
+          "left": 288.734375
+        },
+        "beat": {
+          "x": 249,
+          "y": 404,
+          "width": 127,
+          "height": 28,
+          "top": 404,
+          "right": 376,
+          "bottom": 432,
+          "left": 249
+        },
+        "bar": {
+          "x": 334.671875,
+          "y": 71,
+          "width": 41.328125,
+          "height": 20,
+          "top": 71,
+          "right": 376,
+          "bottom": 91,
+          "left": 334.671875
         }
       }
     },
@@ -216,6 +278,36 @@
           "right": 376,
           "bottom": 648,
           "left": 14
+        },
+        "next": {
+          "x": 288.734375,
+          "y": 102.640625,
+          "width": 87.265625,
+          "height": 40.296875,
+          "top": 102.640625,
+          "right": 376,
+          "bottom": 142.9375,
+          "left": 288.734375
+        },
+        "beat": {
+          "x": 249,
+          "y": 494,
+          "width": 127,
+          "height": 28,
+          "top": 494,
+          "right": 376,
+          "bottom": 522,
+          "left": 249
+        },
+        "bar": {
+          "x": 334.671875,
+          "y": 71,
+          "width": 41.328125,
+          "height": 20,
+          "top": 71,
+          "right": 376,
+          "bottom": 91,
+          "left": 334.671875
         }
       }
     },
@@ -288,6 +380,36 @@
           "right": 416,
           "bottom": 840,
           "left": 14
+        },
+        "next": {
+          "x": 328.734375,
+          "y": 102.640625,
+          "width": 87.265625,
+          "height": 40.296875,
+          "top": 102.640625,
+          "right": 416,
+          "bottom": 142.9375,
+          "left": 328.734375
+        },
+        "beat": {
+          "x": 289,
+          "y": 686,
+          "width": 127,
+          "height": 28,
+          "top": 686,
+          "right": 416,
+          "bottom": 714,
+          "left": 289
+        },
+        "bar": {
+          "x": 374.671875,
+          "y": 71,
+          "width": 41.328125,
+          "height": 20,
+          "top": 71,
+          "right": 416,
+          "bottom": 91,
+          "left": 374.671875
         }
       }
     },
@@ -313,10 +435,10 @@
         },
         "score": {
           "x": 20,
-          "y": 130.59375,
+          "y": 128.59375,
           "width": 470,
-          "height": 134.40625,
-          "top": 130.59375,
+          "height": 136.40625,
+          "top": 128.59375,
           "right": 490,
           "bottom": 265,
           "left": 20
@@ -360,6 +482,36 @@
           "right": 720,
           "bottom": 304,
           "left": 20
+        },
+        "next": {
+          "x": 398.734375,
+          "y": 91,
+          "width": 91.265625,
+          "height": 37.59375,
+          "top": 91,
+          "right": 490,
+          "bottom": 128.59375,
+          "left": 398.734375
+        },
+        "beat": {
+          "x": 368,
+          "y": 268,
+          "width": 122,
+          "height": 26,
+          "top": 268,
+          "right": 490,
+          "bottom": 294,
+          "left": 368
+        },
+        "bar": {
+          "x": 445.046875,
+          "y": 67,
+          "width": 44.953125,
+          "height": 20,
+          "top": 67,
+          "right": 490,
+          "bottom": 87,
+          "left": 445.046875
         }
       }
     },
@@ -385,10 +537,10 @@
         },
         "score": {
           "x": 24,
-          "y": 148,
+          "y": 146,
           "width": 772,
-          "height": 791.40625,
-          "top": 148,
+          "height": 793.40625,
+          "top": 146,
           "right": 796,
           "bottom": 939.40625,
           "left": 24
@@ -432,6 +584,36 @@
           "right": 796,
           "bottom": 1082,
           "left": 24
+        },
+        "next": {
+          "x": 704.734375,
+          "y": 103,
+          "width": 91.265625,
+          "height": 43,
+          "top": 103,
+          "right": 796,
+          "bottom": 146,
+          "left": 704.734375
+        },
+        "beat": {
+          "x": 650,
+          "y": 945.40625,
+          "width": 146,
+          "height": 32,
+          "top": 945.40625,
+          "right": 796,
+          "bottom": 977.40625,
+          "left": 650
+        },
+        "bar": {
+          "x": 751.046875,
+          "y": 79,
+          "width": 44.953125,
+          "height": 20,
+          "top": 79,
+          "right": 796,
+          "bottom": 99,
+          "left": 751.046875
         }
       }
     },
@@ -457,10 +639,10 @@
         },
         "score": {
           "x": 136,
-          "y": 188,
+          "y": 186,
           "width": 746,
-          "height": 407,
-          "top": 188,
+          "height": 409,
+          "top": 186,
           "right": 882,
           "bottom": 595,
           "left": 136
@@ -504,6 +686,36 @@
           "right": 1144,
           "bottom": 678,
           "left": 136
+        },
+        "next": {
+          "x": 790.734375,
+          "y": 143,
+          "width": 91.265625,
+          "height": 43,
+          "top": 143,
+          "right": 882,
+          "bottom": 186,
+          "left": 790.734375
+        },
+        "beat": {
+          "x": 736,
+          "y": 601,
+          "width": 146,
+          "height": 32,
+          "top": 601,
+          "right": 882,
+          "bottom": 633,
+          "left": 736
+        },
+        "bar": {
+          "x": 837.046875,
+          "y": 119,
+          "width": 44.953125,
+          "height": 20,
+          "top": 119,
+          "right": 882,
+          "bottom": 139,
+          "left": 837.046875
         }
       }
     },
@@ -511,8 +723,13 @@
     "chrome: mode disables mic, preserves row, controls settings and A-only alternate",
     "chrome: manual advance crosses measures, pause/resume, completion/repeat",
     "chrome: 200 percent text reflows without horizontal overflow",
+    "chrome: fake microphone meter fits 320×568, sign, range, direction and suppression",
+    "chrome: continuous mode counts four on start and resume",
+    "chrome: old storage and A=440 / strict preferences survive reload",
     "chrome: denied microphone retains choices and offers no-mic fallback",
-    "webkit: all 24 introduction / setup flows and bounded preview",
+    "webkit: all 47 introduction / setup flows and bounded preview",
+    "webkit: chapters 01–08, common menus and add-finger sublists",
+    "webkit: A-only 34low on every common exercise, returning from child lesson",
     {
       "engine": "webkit",
       "viewport": [
@@ -582,6 +799,36 @@
           "right": 308,
           "bottom": 476,
           "left": 12
+        },
+        "next": {
+          "x": 225.359375,
+          "y": 100.5625,
+          "width": 82.640625,
+          "height": 40.296875,
+          "top": 100.5625,
+          "right": 308,
+          "bottom": 140.859375,
+          "left": 225.359375
+        },
+        "beat": {
+          "x": 193,
+          "y": 327.5,
+          "width": 115,
+          "height": 25,
+          "top": 327.5,
+          "right": 308,
+          "bottom": 352.5,
+          "left": 193
+        },
+        "bar": {
+          "x": 269.203125,
+          "y": 71,
+          "width": 38.796875,
+          "height": 20,
+          "top": 71,
+          "right": 308,
+          "bottom": 91,
+          "left": 269.203125
         }
       }
     },
@@ -654,6 +901,36 @@
           "right": 376,
           "bottom": 558,
           "left": 14
+        },
+        "next": {
+          "x": 293.359375,
+          "y": 102.640625,
+          "width": 82.640625,
+          "height": 40.296875,
+          "top": 102.640625,
+          "right": 376,
+          "bottom": 142.9375,
+          "left": 293.359375
+        },
+        "beat": {
+          "x": 249,
+          "y": 404,
+          "width": 127,
+          "height": 28,
+          "top": 404,
+          "right": 376,
+          "bottom": 432,
+          "left": 249
+        },
+        "bar": {
+          "x": 337.203125,
+          "y": 71,
+          "width": 38.796875,
+          "height": 20,
+          "top": 71,
+          "right": 376,
+          "bottom": 91,
+          "left": 337.203125
         }
       }
     },
@@ -726,6 +1003,36 @@
           "right": 376,
           "bottom": 648,
           "left": 14
+        },
+        "next": {
+          "x": 293.359375,
+          "y": 102.640625,
+          "width": 82.640625,
+          "height": 40.296875,
+          "top": 102.640625,
+          "right": 376,
+          "bottom": 142.9375,
+          "left": 293.359375
+        },
+        "beat": {
+          "x": 249,
+          "y": 494,
+          "width": 127,
+          "height": 28,
+          "top": 494,
+          "right": 376,
+          "bottom": 522,
+          "left": 249
+        },
+        "bar": {
+          "x": 337.203125,
+          "y": 71,
+          "width": 38.796875,
+          "height": 20,
+          "top": 71,
+          "right": 376,
+          "bottom": 91,
+          "left": 337.203125
         }
       }
     },
@@ -798,6 +1105,36 @@
           "right": 416,
           "bottom": 840,
           "left": 14
+        },
+        "next": {
+          "x": 333.359375,
+          "y": 102.640625,
+          "width": 82.640625,
+          "height": 40.296875,
+          "top": 102.640625,
+          "right": 416,
+          "bottom": 142.9375,
+          "left": 333.359375
+        },
+        "beat": {
+          "x": 289,
+          "y": 686,
+          "width": 127,
+          "height": 28,
+          "top": 686,
+          "right": 416,
+          "bottom": 714,
+          "left": 289
+        },
+        "bar": {
+          "x": 377.203125,
+          "y": 71,
+          "width": 38.796875,
+          "height": 20,
+          "top": 71,
+          "right": 416,
+          "bottom": 91,
+          "left": 377.203125
         }
       }
     },
@@ -823,10 +1160,10 @@
         },
         "score": {
           "x": 20,
-          "y": 130.59375,
+          "y": 128.59375,
           "width": 470,
-          "height": 134.40625,
-          "top": 130.59375,
+          "height": 136.40625,
+          "top": 128.59375,
           "right": 490,
           "bottom": 265,
           "left": 20
@@ -870,6 +1207,36 @@
           "right": 720,
           "bottom": 304,
           "left": 20
+        },
+        "next": {
+          "x": 403.359375,
+          "y": 91,
+          "width": 86.640625,
+          "height": 37.59375,
+          "top": 91,
+          "right": 490,
+          "bottom": 128.59375,
+          "left": 403.359375
+        },
+        "beat": {
+          "x": 368,
+          "y": 268,
+          "width": 122,
+          "height": 26,
+          "top": 268,
+          "right": 490,
+          "bottom": 294,
+          "left": 368
+        },
+        "bar": {
+          "x": 447.8125,
+          "y": 67,
+          "width": 42.1875,
+          "height": 20,
+          "top": 67,
+          "right": 490,
+          "bottom": 87,
+          "left": 447.8125
         }
       }
     },
@@ -895,10 +1262,10 @@
         },
         "score": {
           "x": 24,
-          "y": 148,
+          "y": 146,
           "width": 772,
-          "height": 791.40625,
-          "top": 148,
+          "height": 793.40625,
+          "top": 146,
           "right": 796,
           "bottom": 939.40625,
           "left": 24
@@ -942,6 +1309,36 @@
           "right": 796,
           "bottom": 1082,
           "left": 24
+        },
+        "next": {
+          "x": 709.359375,
+          "y": 103,
+          "width": 86.640625,
+          "height": 43,
+          "top": 103,
+          "right": 796,
+          "bottom": 146,
+          "left": 709.359375
+        },
+        "beat": {
+          "x": 650,
+          "y": 945.40625,
+          "width": 146,
+          "height": 32,
+          "top": 945.40625,
+          "right": 796,
+          "bottom": 977.40625,
+          "left": 650
+        },
+        "bar": {
+          "x": 753.8125,
+          "y": 79,
+          "width": 42.1875,
+          "height": 20,
+          "top": 79,
+          "right": 796,
+          "bottom": 99,
+          "left": 753.8125
         }
       }
     },
@@ -967,10 +1364,10 @@
         },
         "score": {
           "x": 136,
-          "y": 188,
+          "y": 186,
           "width": 746,
-          "height": 407,
-          "top": 188,
+          "height": 409,
+          "top": 186,
           "right": 882,
           "bottom": 595,
           "left": 136
@@ -1014,6 +1411,36 @@
           "right": 1144,
           "bottom": 678,
           "left": 136
+        },
+        "next": {
+          "x": 795.359375,
+          "y": 143,
+          "width": 86.640625,
+          "height": 43,
+          "top": 143,
+          "right": 882,
+          "bottom": 186,
+          "left": 795.359375
+        },
+        "beat": {
+          "x": 736,
+          "y": 601,
+          "width": 146,
+          "height": 32,
+          "top": 601,
+          "right": 882,
+          "bottom": 633,
+          "left": 736
+        },
+        "bar": {
+          "x": 839.8125,
+          "y": 119,
+          "width": 42.1875,
+          "height": 20,
+          "top": 119,
+          "right": 882,
+          "bottom": 139,
+          "left": 839.8125
         }
       }
     },
@@ -1021,6 +1448,9 @@
     "webkit: mode disables mic, preserves row, controls settings and A-only alternate",
     "webkit: manual advance crosses measures, pause/resume, completion/repeat",
     "webkit: 200 percent text reflows without horizontal overflow",
+    "webkit: fake microphone meter fits 320×568, sign, range, direction and suppression",
+    "webkit: continuous mode counts four on start and resume",
+    "webkit: old storage and A=440 / strict preferences survive reload",
     "webkit: denied microphone retains choices and offers no-mic fallback"
   ],
   "errors": []

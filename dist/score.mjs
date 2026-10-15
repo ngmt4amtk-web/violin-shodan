@@ -59,7 +59,6 @@ export function renderScore(notes,settings={},group=0){
    const decorate=tone=>{const alteration=tone.alteration??(tone.name.includes('♯')?1:0),previous=accidentals.get(tone.step)||0;accidentals.set(tone.step,alteration);return {...tone,accidental:alteration===1?'sharp':alteration===-1?'flat':previous!==0?'natural':null};};
    const printed=n.rest?n:n.chord?{...n,chord:n.chord.map(decorate)}:decorate(n);
    body+=`<g data-score-index="${n.index}">${noteGlyph(printed,x,96,settings)}${settings.names!==false?`<text x="${x}" y="159" font-size="12" fill="#69756e" text-anchor="middle">${escapeHTML(n.rest?'休':n.chord?.map(z=>z.string).join('+')||n.string)}</text>`:''}</g>`;
-   if(n.slurStart){const next=ns.find(z=>z.index===n.index+1);if(next){const nx=noteX(next),y=Math.max(110,pitchY(96,n.step)+12,pitchY(96,next.step)+12);body+=`<path data-role="slur" d="M${x} ${y}Q${(x+nx)/2} ${y+16} ${nx} ${y}" fill="none" stroke="#69756e" stroke-width="1.4"/>`;}}
   }
   body+=`<path d="M${width-12} 52V96" stroke="#66746d" stroke-width="1.2"/>`;
   return `<svg class="score-bar" viewBox="0 0 ${width} 174" role="img" aria-label="${bar+1}小節目">${body}</svg>`;
@@ -69,12 +68,11 @@ export function renderScore(notes,settings={},group=0){
 // 連続した五線に複数小節を組む。字形・音高・加線は従来の共通描画を使う。
 export function renderSystems(notes,settings={},barsPerSystem=3,layout={}){
  const bars=[...new Set(notes.map(n=>n.bar))],systems=[];
- // プレビューは、加線・下向きの符幹・スラーに必要な余白だけを残す。
+ // プレビューは、加線・下向きの符幹に必要な余白だけを残す。
  const namesY=layout.compact?Math.max(118,...notes.filter(n=>!n.rest).map(n=>{
   const tones=n.chord||[n],steps=tones.map(t=>t.step);
   let low=Math.max(...steps.map(step=>pitchY(90,step)));
   if(n.beats<4&&(Math.min(...steps)+Math.max(...steps))/2>=4)low+=3.5*STAFF_SPACE;
-  if(n.slurStart)low=Math.max(low,112,pitchY(90,n.step)+18);
   return low+18;
  })):136;
  const viewTop=layout.compact?7:0,viewHeight=namesY+10-viewTop;
@@ -97,7 +95,6 @@ export function renderSystems(notes,settings={},barsPerSystem=3,layout={}){
     const decorate=t=>{const a=t.alteration??(t.name.includes('♯')?1:t.name.includes('♭')?-1:0),prev=accidentals.get(t.step)||0;accidentals.set(t.step,a);return {...t,accidental:a===1?'sharp':a===-1?'flat':prev!==0?'natural':null};};
     const printed=n.rest?n:n.chord?{...n,chord:n.chord.map(decorate)}:decorate(n);
     music+=`<g data-score-index="${n.index}">${noteGlyph(printed,nx,bottom,settings)}${settings.names!==false?`<text x="${nx}" y="${namesY}" text-anchor="middle" font-size="10" fill="#697384">${escapeHTML(n.rest?'休':n.chord?.map(z=>z.string).join('+')||n.string)}</text>`:''}</g>`;
-    if(n.slurStart){const next=ns.find(z=>z.index===n.index+1);if(next){const xx=noteX(next),y=Math.max(106,pitchY(bottom,n.step)+12,pitchY(bottom,next.step)+12);music+=`<path data-role="slur" d="M${nx} ${y}Q${(nx+xx)/2} ${y+12} ${xx} ${y}" fill="none" stroke="#697384" stroke-width="1.4"/>`;}}
    }
    music+=`<path data-role="barline" d="M${x+bw} 46V90" stroke="#657083" stroke-width="1.2"/>`;
   }

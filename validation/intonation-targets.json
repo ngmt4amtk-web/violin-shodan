@@ -1,0 +1,696 @@
+{
+  "referenceA": 442,
+  "context": "melodic",
+  "rows": [
+    {
+      "string": "G",
+      "pattern": "23",
+      "finger": 0,
+      "name": "ソ",
+      "key": "ソ長調",
+      "centsFromET": -3.910001730774866,
+      "hz442": 196.44444444444443
+    },
+    {
+      "string": "G",
+      "pattern": "23",
+      "finger": 1,
+      "name": "ラ",
+      "key": "ソ長調",
+      "centsFromET": -2.842170943040401e-14,
+      "hz442": 221
+    },
+    {
+      "string": "G",
+      "pattern": "23",
+      "finger": 2,
+      "name": "シ",
+      "key": "ソ長調",
+      "centsFromET": 3.910001730774809,
+      "hz442": 248.625
+    },
+    {
+      "string": "G",
+      "pattern": "23",
+      "finger": 3,
+      "name": "ド",
+      "key": "ソ長調",
+      "centsFromET": -5.8650025961623555,
+      "hz442": 261.9259259259259
+    },
+    {
+      "string": "G",
+      "pattern": "23",
+      "finger": 4,
+      "name": "レ",
+      "key": "ソ長調",
+      "centsFromET": -1.955000865387433,
+      "hz442": 294.6666666666667
+    },
+    {
+      "string": "G",
+      "pattern": "12",
+      "finger": 0,
+      "name": "ソ",
+      "key": "シ♭長調",
+      "centsFromET": -3.910001730774866,
+      "hz442": 196.44444444444443
+    },
+    {
+      "string": "G",
+      "pattern": "12",
+      "finger": 1,
+      "name": "ラ",
+      "key": "シ♭長調",
+      "centsFromET": -1.1368683772161603e-13,
+      "hz442": 220.99999999999997
+    },
+    {
+      "string": "G",
+      "pattern": "12",
+      "finger": 2,
+      "name": "シ♭",
+      "key": "シ♭長調",
+      "centsFromET": -9.775004326937164,
+      "hz442": 232.82304526748973
+    },
+    {
+      "string": "G",
+      "pattern": "12",
+      "finger": 3,
+      "name": "ド",
+      "key": "シ♭長調",
+      "centsFromET": -5.865002596162327,
+      "hz442": 261.9259259259259
+    },
+    {
+      "string": "G",
+      "pattern": "12",
+      "finger": 4,
+      "name": "レ",
+      "key": "シ♭長調",
+      "centsFromET": -1.9550008653874897,
+      "hz442": 294.66666666666663
+    },
+    {
+      "string": "G",
+      "pattern": "34",
+      "finger": 0,
+      "name": "ソ",
+      "key": "レ長調",
+      "centsFromET": -3.910001730774866,
+      "hz442": 196.44444444444443
+    },
+    {
+      "string": "G",
+      "pattern": "34",
+      "finger": 1,
+      "name": "ラ",
+      "key": "レ長調",
+      "centsFromET": 0,
+      "hz442": 221
+    },
+    {
+      "string": "G",
+      "pattern": "34",
+      "finger": 2,
+      "name": "シ",
+      "key": "レ長調",
+      "centsFromET": 3.910001730774866,
+      "hz442": 248.625
+    },
+    {
+      "string": "G",
+      "pattern": "34",
+      "finger": 3,
+      "name": "ド♯",
+      "key": "レ長調",
+      "centsFromET": 7.820003461549618,
+      "hz442": 279.703125
+    },
+    {
+      "string": "G",
+      "pattern": "34",
+      "finger": 4,
+      "name": "レ",
+      "key": "レ長調",
+      "centsFromET": -1.955000865387433,
+      "hz442": 294.6666666666667
+    },
+    {
+      "string": "G",
+      "pattern": "34low",
+      "finger": 0,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "G",
+      "pattern": "34low",
+      "finger": 1,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "G",
+      "pattern": "34low",
+      "finger": 2,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "G",
+      "pattern": "34low",
+      "finger": 3,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "G",
+      "pattern": "34low",
+      "finger": 4,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "D",
+      "pattern": "23",
+      "finger": 0,
+      "name": "レ",
+      "key": "レ長調",
+      "centsFromET": -1.9550008653872,
+      "hz442": 294.6666666666667
+    },
+    {
+      "string": "D",
+      "pattern": "23",
+      "finger": 1,
+      "name": "ミ",
+      "key": "レ長調",
+      "centsFromET": 1.9550008653874045,
+      "hz442": 331.5
+    },
+    {
+      "string": "D",
+      "pattern": "23",
+      "finger": 2,
+      "name": "ファ♯",
+      "key": "レ長調",
+      "centsFromET": 5.865002596162242,
+      "hz442": 372.93750000000006
+    },
+    {
+      "string": "D",
+      "pattern": "23",
+      "finger": 3,
+      "name": "ソ",
+      "key": "レ長調",
+      "centsFromET": -3.9100017307749226,
+      "hz442": 392.88888888888886
+    },
+    {
+      "string": "D",
+      "pattern": "23",
+      "finger": 4,
+      "name": "ラ",
+      "key": "レ長調",
+      "centsFromET": 0,
+      "hz442": 442
+    },
+    {
+      "string": "D",
+      "pattern": "12",
+      "finger": 0,
+      "name": "レ",
+      "key": "ファ長調",
+      "centsFromET": -1.9550008653872,
+      "hz442": 294.6666666666667
+    },
+    {
+      "string": "D",
+      "pattern": "12",
+      "finger": 1,
+      "name": "ミ",
+      "key": "ファ長調",
+      "centsFromET": 1.9550008653873192,
+      "hz442": 331.5
+    },
+    {
+      "string": "D",
+      "pattern": "12",
+      "finger": 2,
+      "name": "ファ",
+      "key": "ファ長調",
+      "centsFromET": -7.820003461549732,
+      "hz442": 349.2345679012346
+    },
+    {
+      "string": "D",
+      "pattern": "12",
+      "finger": 3,
+      "name": "ソ",
+      "key": "ファ長調",
+      "centsFromET": -3.910001730774894,
+      "hz442": 392.88888888888886
+    },
+    {
+      "string": "D",
+      "pattern": "12",
+      "finger": 4,
+      "name": "ラ",
+      "key": "ファ長調",
+      "centsFromET": -5.684341886080802e-14,
+      "hz442": 442
+    },
+    {
+      "string": "D",
+      "pattern": "34",
+      "finger": 0,
+      "name": "レ",
+      "key": "ラ長調",
+      "centsFromET": -1.9550008653872,
+      "hz442": 294.6666666666667
+    },
+    {
+      "string": "D",
+      "pattern": "34",
+      "finger": 1,
+      "name": "ミ",
+      "key": "ラ長調",
+      "centsFromET": 1.955000865387433,
+      "hz442": 331.50000000000006
+    },
+    {
+      "string": "D",
+      "pattern": "34",
+      "finger": 2,
+      "name": "ファ♯",
+      "key": "ラ長調",
+      "centsFromET": 5.865002596162299,
+      "hz442": 372.93750000000006
+    },
+    {
+      "string": "D",
+      "pattern": "34",
+      "finger": 3,
+      "name": "ソ♯",
+      "key": "ラ長調",
+      "centsFromET": 9.77500432693705,
+      "hz442": 419.55468750000006
+    },
+    {
+      "string": "D",
+      "pattern": "34",
+      "finger": 4,
+      "name": "ラ",
+      "key": "ラ長調",
+      "centsFromET": 0,
+      "hz442": 442
+    },
+    {
+      "string": "D",
+      "pattern": "34low",
+      "finger": 0,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "D",
+      "pattern": "34low",
+      "finger": 1,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "D",
+      "pattern": "34low",
+      "finger": 2,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "D",
+      "pattern": "34low",
+      "finger": 3,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "D",
+      "pattern": "34low",
+      "finger": 4,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "A",
+      "pattern": "23",
+      "finger": 0,
+      "name": "ラ",
+      "key": "ラ長調",
+      "centsFromET": 0,
+      "hz442": 442
+    },
+    {
+      "string": "A",
+      "pattern": "23",
+      "finger": 1,
+      "name": "シ",
+      "key": "ラ長調",
+      "centsFromET": 3.9100017307748374,
+      "hz442": 497.25
+    },
+    {
+      "string": "A",
+      "pattern": "23",
+      "finger": 2,
+      "name": "ド♯",
+      "key": "ラ長調",
+      "centsFromET": 7.820003461549675,
+      "hz442": 559.40625
+    },
+    {
+      "string": "A",
+      "pattern": "23",
+      "finger": 3,
+      "name": "レ",
+      "key": "ラ長調",
+      "centsFromET": -1.9550008653874897,
+      "hz442": 589.3333333333333
+    },
+    {
+      "string": "A",
+      "pattern": "23",
+      "finger": 4,
+      "name": "ミ",
+      "key": "ラ長調",
+      "centsFromET": 1.955000865387433,
+      "hz442": 663.0000000000001
+    },
+    {
+      "string": "A",
+      "pattern": "12",
+      "finger": 0,
+      "name": "ラ",
+      "key": "ド長調",
+      "centsFromET": 0,
+      "hz442": 442
+    },
+    {
+      "string": "A",
+      "pattern": "12",
+      "finger": 1,
+      "name": "シ",
+      "key": "ド長調",
+      "centsFromET": 3.910001730774752,
+      "hz442": 497.25
+    },
+    {
+      "string": "A",
+      "pattern": "12",
+      "finger": 2,
+      "name": "ド",
+      "key": "ド長調",
+      "centsFromET": -5.865002596162299,
+      "hz442": 523.8518518518518
+    },
+    {
+      "string": "A",
+      "pattern": "12",
+      "finger": 3,
+      "name": "レ",
+      "key": "ド長調",
+      "centsFromET": -1.9550008653874613,
+      "hz442": 589.3333333333334
+    },
+    {
+      "string": "A",
+      "pattern": "12",
+      "finger": 4,
+      "name": "ミ",
+      "key": "ド長調",
+      "centsFromET": 1.955000865387376,
+      "hz442": 663
+    },
+    {
+      "string": "A",
+      "pattern": "34",
+      "finger": 0,
+      "name": "ラ",
+      "key": "ミ長調",
+      "centsFromET": 0,
+      "hz442": 442
+    },
+    {
+      "string": "A",
+      "pattern": "34",
+      "finger": 1,
+      "name": "シ",
+      "key": "ミ長調",
+      "centsFromET": 3.910001730774866,
+      "hz442": 497.25
+    },
+    {
+      "string": "A",
+      "pattern": "34",
+      "finger": 2,
+      "name": "ド♯",
+      "key": "ミ長調",
+      "centsFromET": 7.820003461549732,
+      "hz442": 559.40625
+    },
+    {
+      "string": "A",
+      "pattern": "34",
+      "finger": 3,
+      "name": "レ♯",
+      "key": "ミ長調",
+      "centsFromET": 11.730005192324484,
+      "hz442": 629.33203125
+    },
+    {
+      "string": "A",
+      "pattern": "34",
+      "finger": 4,
+      "name": "ミ",
+      "key": "ミ長調",
+      "centsFromET": 1.955000865387433,
+      "hz442": 663.0000000000001
+    },
+    {
+      "string": "A",
+      "pattern": "34low",
+      "finger": 0,
+      "name": "ラ",
+      "key": "シ♭長調",
+      "centsFromET": 0,
+      "hz442": 442
+    },
+    {
+      "string": "A",
+      "pattern": "34low",
+      "finger": 1,
+      "name": "シ♭",
+      "key": "シ♭長調",
+      "centsFromET": -9.775004326937164,
+      "hz442": 465.64609053497946
+    },
+    {
+      "string": "A",
+      "pattern": "34low",
+      "finger": 2,
+      "name": "ド",
+      "key": "シ♭長調",
+      "centsFromET": -5.865002596162327,
+      "hz442": 523.8518518518518
+    },
+    {
+      "string": "A",
+      "pattern": "34low",
+      "finger": 3,
+      "name": "レ",
+      "key": "シ♭長調",
+      "centsFromET": -1.9550008653874897,
+      "hz442": 589.3333333333333
+    },
+    {
+      "string": "A",
+      "pattern": "34low",
+      "finger": 4,
+      "name": "ミ♭",
+      "key": "シ♭長調",
+      "centsFromET": -11.730005192324654,
+      "hz442": 620.8614540466392
+    },
+    {
+      "string": "E",
+      "pattern": "23",
+      "finger": 0,
+      "name": "ミ",
+      "key": "ミ長調",
+      "centsFromET": 1.9550008653876136,
+      "hz442": 663.0000000000001
+    },
+    {
+      "string": "E",
+      "pattern": "23",
+      "finger": 1,
+      "name": "ファ♯",
+      "key": "ミ長調",
+      "centsFromET": 5.86500259616227,
+      "hz442": 745.8750000000001
+    },
+    {
+      "string": "E",
+      "pattern": "23",
+      "finger": 2,
+      "name": "ソ♯",
+      "key": "ミ長調",
+      "centsFromET": 9.775004326937108,
+      "hz442": 839.1093750000001
+    },
+    {
+      "string": "E",
+      "pattern": "23",
+      "finger": 3,
+      "name": "ラ",
+      "key": "ミ長調",
+      "centsFromET": -5.684341886080802e-14,
+      "hz442": 884
+    },
+    {
+      "string": "E",
+      "pattern": "23",
+      "finger": 4,
+      "name": "シ",
+      "key": "ミ長調",
+      "centsFromET": 3.910001730774866,
+      "hz442": 994.5
+    },
+    {
+      "string": "E",
+      "pattern": "12",
+      "finger": 0,
+      "name": "ミ",
+      "key": "ソ長調",
+      "centsFromET": 1.9550008653876136,
+      "hz442": 663.0000000000001
+    },
+    {
+      "string": "E",
+      "pattern": "12",
+      "finger": 1,
+      "name": "ファ♯",
+      "key": "ソ長調",
+      "centsFromET": 5.865002596162185,
+      "hz442": 745.8750000000001
+    },
+    {
+      "string": "E",
+      "pattern": "12",
+      "finger": 2,
+      "name": "ソ",
+      "key": "ソ長調",
+      "centsFromET": -3.910001730774866,
+      "hz442": 785.7777777777778
+    },
+    {
+      "string": "E",
+      "pattern": "12",
+      "finger": 3,
+      "name": "ラ",
+      "key": "ソ長調",
+      "centsFromET": -2.842170943040401e-14,
+      "hz442": 884
+    },
+    {
+      "string": "E",
+      "pattern": "12",
+      "finger": 4,
+      "name": "シ",
+      "key": "ソ長調",
+      "centsFromET": 3.910001730774809,
+      "hz442": 994.5
+    },
+    {
+      "string": "E",
+      "pattern": "34",
+      "finger": 0,
+      "name": "ミ",
+      "key": "シ長調",
+      "centsFromET": 1.9550008653876136,
+      "hz442": 663.0000000000001
+    },
+    {
+      "string": "E",
+      "pattern": "34",
+      "finger": 1,
+      "name": "ファ♯",
+      "key": "シ長調",
+      "centsFromET": 5.865002596162299,
+      "hz442": 745.8750000000001
+    },
+    {
+      "string": "E",
+      "pattern": "34",
+      "finger": 2,
+      "name": "ソ♯",
+      "key": "シ長調",
+      "centsFromET": 9.775004326937164,
+      "hz442": 839.1093750000001
+    },
+    {
+      "string": "E",
+      "pattern": "34",
+      "finger": 3,
+      "name": "ラ♯",
+      "key": "シ長調",
+      "centsFromET": 13.685006057711917,
+      "hz442": 943.998046875
+    },
+    {
+      "string": "E",
+      "pattern": "34",
+      "finger": 4,
+      "name": "シ",
+      "key": "シ長調",
+      "centsFromET": 3.910001730774866,
+      "hz442": 994.5
+    },
+    {
+      "string": "E",
+      "pattern": "34low",
+      "finger": 0,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "E",
+      "pattern": "34low",
+      "finger": 1,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "E",
+      "pattern": "34low",
+      "finger": 2,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "E",
+      "pattern": "34low",
+      "finger": 3,
+      "available": false,
+      "reason": "34lowはA線限定"
+    },
+    {
+      "string": "E",
+      "pattern": "34low",
+      "finger": 4,
+      "available": false,
+      "reason": "34lowはA線限定"
+    }
+  ]
+}

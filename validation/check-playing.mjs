@@ -9,7 +9,7 @@ for(const engine of ['chrome','webkit']){
  const g=await page.evaluate(()=>{const r=s=>document.querySelector(s).getBoundingClientRect().toJSON();return {controls:r('.practice-controls'),guide:r('.guidance-panel'),score:r('#noteScore'),width:innerWidth,height:innerHeight,scroll:document.documentElement.scrollWidth};});assert(g.controls.bottom<=568);assert(g.guide.bottom<=g.controls.top);assert(g.score.bottom<=g.guide.top);assert(g.scroll<=g.width);assert.equal(await page.locator('#noteScore [data-role=staff-line]').count(),5);if(l.id==='eighth34')assert.equal(await page.locator('[data-beat]:visible').count(),2);results.push({engine,lesson:l.id,controlsBottom:g.controls.bottom});
  }
  if(engine==='chrome'){
-  await page.goto('file:///Users/ngmt.mtk/genshirube-20261014/portable/%E5%BC%A6%E3%81%97%E3%82%8B%E3%81%B9.html');await page.locator('[data-chapter="1"]').click();await page.locator('[data-lesson="fingers"]').click();assert.equal(await page.locator('.pattern-diagram img').evaluate(el=>el.complete&&el.naturalWidth>0),true);
+  await page.goto(new URL('../portable/バイオリン初段.html',import.meta.url).href);await page.locator('[data-chapter="1"]').click();await page.locator('[data-lesson="fingers"]').click();assert.equal(await page.locator('.pattern-diagram img').evaluate(el=>el.complete&&el.naturalWidth>0),true);
  }
  await browser.close();console.log('PASS',engine,'all 24 performances fit 320 x 568');
 }

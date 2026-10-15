@@ -106,9 +106,9 @@ test('全課題・全弦・全形・全型・問題・音階で4/4、各小節4�
 });
 test('8章の構成・共通3行・2つの子一覧・廃止した課題だけを削除',()=>{
  assert.deepEqual(CHAPTERS,['開放弦','2と3をくっつける','はじめての音階','1と2をくっつける','3と4をくっつける','音階','指の形を切り替える','楽譜を読んで弾く・応用']);
- for(const [unit,ids] of [[0,['open','heights','cross','reading']],[2,['scale']],[5,['scale12','scale34']],[6,['switch2','connect69','compare','switch3','switch23']],[7,['reading55','application94']]])assert.deepEqual(chapterItems(unit).map(l=>l.id),ids);
+ for(const [unit,ids] of [[0,['open','heights','cross','reading']],[2,['scale']],[5,['scale12','scale34']],[6,['switch2','compare','switch3','switch23']],[7,['reading55','application94']]])assert.deepEqual(chapterItems(unit).map(l=>l.id),ids);
  for(const unit of [1,3,4]){const items=chapterItems(unit);assert.deepEqual(items.map(l=>l.title),COMMON_MENU.map(x=>x[1]));assert.deepEqual(items[1].children.map(l=>l.title),['2の指を足す','3の指を足す','4の指を足す']);assert.deepEqual(items.map(l=>l.title),['この形をつかむ','指を1本ずつ確認する','色々な練習']);assert.deepEqual(items[2].children.map(l=>l.title),['4本の指を置いて、離していく','全パターンの動きを練習する','形を保って続ける','開放弦を軸に往復する','3音ずつ上り下り']);assert.deepEqual(items[2].children.map(l=>l.title),VARIETY_MENU.map(x=>x[1]));assert.equal(items.filter(l=>l.children).length,2);}
- const old=['open','heights','cross','reading','fingers','add2','add3','add4','place','scale','reading55','fingers12','pairs12','keep12','switch2','connect69','scale12','fingers34','pairs34','compare','scale34','application94'];for(const id of old)assert(LESSONS.some(l=>l.id===id));assert.equal(new Set(LESSONS.map(l=>l.id)).size,41);
+ const old=['open','heights','cross','reading','fingers','add2','add3','add4','place','scale','reading55','fingers12','pairs12','keep12','switch2','scale12','fingers34','pairs34','compare','scale34','application94'];for(const id of old)assert(LESSONS.some(l=>l.id===id));assert.equal(new Set(LESSONS.map(l=>l.id)).size,40);assert(!LESSONS.some(l=>l.id==='connect69'));
 });
 test('共通メニューは指順とリズムを保ち、音と半音説明だけを形に合わせる',()=>{
  const golden={fingers:[0,1,2,3,4,3,2,1,0].map(f=>[f,4]),add2:[0,1,2,1,2,1,2,1,2,1,0].map((f,i)=>[f,i===10?2:1]),add3:[1,2,3,2,3,2,3,2,3,2,1].map((f,i)=>[f,i===10?2:1]),add4:[2,3,4,3,4,3,2,1,4,3,2,1].map(f=>[f,1]),place:[[1,1],['rest',1],[4,2],[4,1],[3,1],[2,1],[1,1]],pairs:[1,2,1,3,1,4,2,3,2,4,3,4,4,3,4,2,4,1,3,2,3,1,2,1].map(f=>[f,1]),pivot:[...[0,1,0,2,0,3,0,4,0,4,0,3,0,2,0,1].map(f=>[f,1]),[0,4]],triples:[...[0,1,2,1,1,2,3,2,2,3,4,3,4,3,2,3,3,2,1,2,2,1,0,1].map(f=>[f,1]),[0,4]]};
@@ -164,7 +164,7 @@ test('課題の調が旋律目標を変えないことを全音で照合・正�
  for(const string of ['G','D','A','E'])for(const pattern of ['23','12','34'])assert.equal(keyForShape(string,pattern).tonicPitchClass,(STRINGS[string].midi+({23:0,12:3,34:7}[pattern]))%12);
  assert.equal(keyForShape('A','34low').tonicPitchClass,10);
  for(const [id,scale,key] of [['scale','DA',2],['scale12','C1',0],['scale12','G2',7],['scale34','A1',9],['scale34','E1',4]])assert(makeExercise(id,{scale}).every(n=>n.key.tonicPitchClass===key));
- for(let problem=1;problem<=19;problem++)assert(makeExercise('reading55',{problem}).every(n=>n.key.tonicPitchClass===(problem<=15?2:9)));
+ for(let problem=1;problem<=19;problem++)for(const pattern of ['23','12','34'])for(const n of makeExercise('reading55',{problem,pattern}))assert.deepEqual(n.key,keyForShape(n.string,pattern));
 });
 const voiced=(hz,cents=0)=>({frequency:hz*2**(cents/1200),rms:.02,confidence:.99}),quiet={frequency:null,rms:0,confidence:0};
 test('誤答→正しい音1秒→残響350ms→無音180ms→再開。毎回鳴る',()=>{
@@ -210,7 +210,7 @@ test('古いID・無効な保存値を正規化し、実際の初期化も落ち
  assert.doesNotThrow(()=>appHarness('{broken'));const defaults=normalizeStored({preferences:{difficulty:'wrong',a4:441,bpm:-3}}).preferences;assert.equal(defaults.difficulty,'normal');assert.equal(defaults.a4,442);assert.equal(defaults.bpm,60);
 });
 test('廃止IDと古い型の保存値は既定へ戻り、初期化・選択・再保存できる',()=>{
- for(const id of ['eighth23','eighth12','eighth34','order','order12','order34'])for(const identity of [{lessonId:id},{lesson:id},{lesson:{id}}]){
+ for(const id of ['eighth23','eighth12','eighth34','order','order12','order34','connect69'])for(const identity of [{lessonId:id},{lesson:id},{lesson:{id}}]){
   const value={...identity,options:{string:'G',row:'6段目',resolvedRow:6,mode:'step',variant:'flat'},preferences:{a4:440,difficulty:'strict'}},stored=normalizeStored(value);
   assert.equal(stored.lessonId,'open');assert.deepEqual(stored.options,normalizeOptions(LESSONS[0]));assert.equal(stored.preferences.a4,440);assert.equal(stored.preferences.difficulty,'strict');
   const app=appHarness(JSON.stringify(value));assert.equal(app.api.state().view,'home');app.api.enterLesson(stored.lessonId);app.api.navigate('setup');assert.equal(JSON.parse(app.storage.get('violin-shodan-v1')).options.row,'1');
@@ -316,6 +316,49 @@ test('保存済み目標表の照合・Bravura字形と新規モジュールの�
   const note=makeNote(string,finger,1,{pattern,key:keyForShape(string,pattern)}),r=targetForNote(note);rows.push({string,pattern,finger,name:note.name,key:keyName(note.key),centsFromET:r.targetCents,hz442:r.targetHz});
  }
  const text=JSON.stringify({referenceA:442,context:'melodic',rows},null,2)+'\n';assert.equal(await fs.readFile('validation/intonation-targets.json','utf8'),text);
- const sw=await fs.readFile('dist/sw.js','utf8');assert(sw.includes('20261015'));for(const name of ['intonation','settings'])assert(sw.includes(name+'.mjs'));assert(!(await fs.readFile('dist/score.mjs','utf8')).includes('slur'));assert((await fs.readFile('dist/glyphs.mjs','utf8')).includes('Bravura'));
+ const sw=await fs.readFile('dist/sw.js','utf8');assert(sw.includes('violin-shodan-v1-20261016a'));for(const name of ['intonation','settings'])assert(sw.includes(name+'.mjs'));assert(!(await fs.readFile('dist/score.mjs','utf8')).includes('slur'));assert((await fs.readFile('dist/glyphs.mjs','utf8')).includes('Bravura'));
  assert((await fs.readFile('DESIGN.md','utf8')).includes('## 2026-10-15 改修'));const readme=await fs.readFile('README.md','utf8');for(const row of rows.filter(r=>r.available!==false))assert(readme.includes(`| ${row.finger} | ${row.name} | ${row.centsFromET>=0?'+':''}${row.centsFromET.toFixed(3)} | ${row.hz442.toFixed(3)} |`));
+});
+test('小さな小節数だけをDOMから除き、見出し・全譜ボタン・説明を保つ',async()=>{
+ for(const l of LESSONS){
+  const app=appHarness();app.api.enterLesson(l.id);app.api.navigate('setup');const ns=makeExercise(l.id),bars=ns.at(-1).bar+1,setup=app.node('#app').innerHTML;
+  assert(setup.includes(`<div class="section-line"><h2>${bars>6?'はじめの6小節':'この練習の楽譜'}</h2></div>`));assert.doesNotMatch(setup,/barLabel|scorePageLabel|>\d+\s*小節(?:目)?</);
+  if(bars>6)assert(setup.includes(`>全${bars}小節を見る `));
+  app.api.setOptions({mic:false,mode:'wait'});await app.api.startPractice();app.api.advanceNote();const play=app.node('#app').innerHTML;
+  assert.doesNotMatch(play,/barLabel|scorePageLabel|>\d+\s*小節(?:目)?<|>全\d+小節 · 今/);assert(play.includes('<div class="section-line"><h2>楽譜を見ながら</h2></div>'));assert(play.includes('全体の楽譜 ↓'));
+ }
+ const app=appHarness();app.api.enterLesson('reading55');assert(app.node('#app').innerHTML.includes('どれも4小節です。'));
+ for(const file of ['app.mjs','index.html'])assert.doesNotMatch(await fs.readFile('dist/'+file,'utf8'),/barLabel|scorePageLabel/);
+});
+test('19問はページ・弦選択なし、94番と同じ3つの形を選んで保存できる',async()=>{
+ const labels=['2と3がくっつく形','1と2がくっつく形','3と4がくっつく形'];
+ const reading=LESSONS.find(l=>l.id==='reading55');assert.equal(reading.page,null);assert.equal(lessonPage(reading),null);
+ for(const id of ['reading55','application94']){
+  const app=appHarness();app.api.enterLesson(id);const intro=app.node('#app').innerHTML;assert.equal((intro.match(/class="pattern-diagram /g)||[]).length,3);
+  if(id==='reading55'){assert.doesNotMatch(intro,/p\.|音は問題ごとに決まっています/);assert(intro.includes('形を選べます'));assert(intro.includes('次に、問題と指の形を選びます。'));}
+  app.api.navigate('setup');assert.equal(app.api.state().options.pattern,'23');
+  assert.deepEqual([...app.node('#app').innerHTML.matchAll(/<button[^>]+data-option="pattern"[^>]*>(.*?)<\/button>/g)].map(m=>m[1]),labels);
+  for(const pattern of ['23','12','34']){
+   await app.click({option:'pattern',value:pattern});assert.equal(app.api.state().options.pattern,pattern);const saved=JSON.parse(app.storage.get('violin-shodan-v1'));assert.equal(saved.options.pattern,pattern);
+   const reloaded=appHarness(JSON.stringify(saved));reloaded.api.enterLesson(id);assert.equal(reloaded.api.state().options.pattern,pattern);
+   if(id==='reading55'){
+    const html=app.node('#app').innerHTML;assert.doesNotMatch(html,/p\.|data-option="string"|data-select-option="string"/);assert.equal(lessonPage(reading,{pattern}),null);
+    const select=html.match(/<select data-select-option="problem"[^>]*>([\s\S]*?)<\/select>/)[1];assert.deepEqual([...select.matchAll(/<option[^>]*>(.*?)<\/option>/g)].map(m=>m[1]),Array.from({length:19},(_,i)=>'その'+(i+1)));
+   }
+  }
+ }
+});
+test('19問の全形で選択から演奏へ音名・図・楽譜・マイク目標が連動',async()=>{
+ for(const pattern of ['23','12','34']){
+  const app=appHarness();app.api.enterLesson('reading55');app.api.navigate('setup');await app.click({option:'pattern',value:pattern});
+  for(let problem=1;problem<=19;problem++){
+   await app.click({action:'setup'});await app.change({dataset:{selectOption:'problem'},value:String(problem)});const ns=makeExercise('reading55',{problem,pattern});await app.api.startPractice();
+   assert.equal(app.node('#practiceScore').innerHTML,renderSystems(ns,{},3));
+   for(const n of ns){
+    assert.equal(app.node('#noteHeading').textContent,`${n.string}線・${n.name}`);assert(app.node('#livePattern').innerHTML.includes(`data-pattern="${pattern}"`));assert.equal(app.node('#noteScore').innerHTML,renderScore(ns.filter(x=>x.bar===n.bar),{},Math.floor(n.bar/4)));
+    app.api.setReading(voiced(targetForNote(n).targetHz));app.api.observeMic((n.index+1)*.07);assert.equal(app.node('#pitchCents').textContent,'0¢');assert.equal(app.node('#pitchDirection').textContent,'ちょうど');app.api.advanceNote();
+   }
+   assert.equal(app.api.state().view,'finish');
+  }
+ }
 });

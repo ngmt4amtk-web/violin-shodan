@@ -1,11 +1,13 @@
 {
-  "at": "2026-10-15T09:03:05.384Z",
+  "at": "2026-10-15T23:11:58.254Z",
   "base": "http://127.0.0.1:8773",
   "results": [
-    "chrome: all 41 introduction / setup flows and bounded preview",
+    "chrome: all 40 introduction / setup flows and bounded preview",
     "chrome: chapters 01–08, three rows, both sublists and return destinations",
     "chrome: A-only 34low on every common exercise, returning from both sublists",
+    "chrome: chapter 07 has only the four remaining exercises in order",
     "chrome: ①–⑦ choices, random, 94 choices and no old selection wording",
+    "chrome: reading55 all 19 problems and three shapes, no pages or string choices",
     "chrome: simulated safe-area insets protect all screen edges within 100svh",
     {
       "engine": "chrome",
@@ -97,15 +99,15 @@
           "bottom": 352.5,
           "left": 193
         },
-        "bar": {
-          "x": 266.671875,
-          "y": 71,
-          "width": 41.328125,
-          "height": 20,
-          "top": 71,
-          "right": 308,
-          "bottom": 91,
-          "left": 266.671875
+        "phase": {
+          "x": 12,
+          "y": 73,
+          "width": 120.5625,
+          "height": 13,
+          "top": 73,
+          "right": 132.5625,
+          "bottom": 86,
+          "left": 12
         }
       }
     },
@@ -199,15 +201,15 @@
           "bottom": 432,
           "left": 249
         },
-        "bar": {
-          "x": 334.671875,
-          "y": 71,
-          "width": 41.328125,
-          "height": 20,
-          "top": 71,
-          "right": 376,
-          "bottom": 91,
-          "left": 334.671875
+        "phase": {
+          "x": 14,
+          "y": 73,
+          "width": 120.5625,
+          "height": 13,
+          "top": 73,
+          "right": 134.5625,
+          "bottom": 86,
+          "left": 14
         }
       }
     },
@@ -301,15 +303,15 @@
           "bottom": 522,
           "left": 249
         },
-        "bar": {
-          "x": 334.671875,
-          "y": 71,
-          "width": 41.328125,
-          "height": 20,
-          "top": 71,
-          "right": 376,
-          "bottom": 91,
-          "left": 334.671875
+        "phase": {
+          "x": 14,
+          "y": 73,
+          "width": 120.5625,
+          "height": 13,
+          "top": 73,
+          "right": 134.5625,
+          "bottom": 86,
+          "left": 14
         }
       }
     },
@@ -403,15 +405,15 @@
           "bottom": 714,
           "left": 289
         },
-        "bar": {
-          "x": 374.671875,
-          "y": 71,
-          "width": 41.328125,
-          "height": 20,
-          "top": 71,
-          "right": 416,
-          "bottom": 91,
-          "left": 374.671875
+        "phase": {
+          "x": 14,
+          "y": 73,
+          "width": 120.5625,
+          "height": 13,
+          "top": 73,
+          "right": 134.5625,
+          "bottom": 86,
+          "left": 14
         }
       }
     },
@@ -505,15 +507,15 @@
           "bottom": 294,
           "left": 368
         },
-        "bar": {
-          "x": 445.046875,
-          "y": 67,
-          "width": 44.953125,
-          "height": 20,
-          "top": 67,
-          "right": 490,
-          "bottom": 87,
-          "left": 445.046875
+        "phase": {
+          "x": 20,
+          "y": 69,
+          "width": 131.53125,
+          "height": 15,
+          "top": 69,
+          "right": 151.53125,
+          "bottom": 84,
+          "left": 20
         }
       }
     },
@@ -607,15 +609,15 @@
           "bottom": 977.40625,
           "left": 650
         },
-        "bar": {
-          "x": 751.046875,
-          "y": 79,
-          "width": 44.953125,
-          "height": 20,
-          "top": 79,
-          "right": 796,
-          "bottom": 99,
-          "left": 751.046875
+        "phase": {
+          "x": 24,
+          "y": 81,
+          "width": 131.53125,
+          "height": 15,
+          "top": 81,
+          "right": 155.53125,
+          "bottom": 96,
+          "left": 24
         }
       }
     },
@@ -709,15 +711,15 @@
           "bottom": 633,
           "left": 736
         },
-        "bar": {
-          "x": 837.046875,
-          "y": 119,
-          "width": 44.953125,
-          "height": 20,
-          "top": 119,
-          "right": 882,
-          "bottom": 139,
-          "left": 837.046875
+        "phase": {
+          "x": 136,
+          "y": 121,
+          "width": 131.53125,
+          "height": 15,
+          "top": 121,
+          "right": 267.53125,
+          "bottom": 136,
+          "left": 136
         }
       }
     },
@@ -730,10 +732,12 @@
     "chrome: old storage and A=440 / strict preferences survive reload",
     "chrome: removed IDs and old row text initialize and return to defaults",
     "chrome: denied microphone retains choices and offers no-mic fallback",
-    "webkit: all 41 introduction / setup flows and bounded preview",
+    "webkit: all 40 introduction / setup flows and bounded preview",
     "webkit: chapters 01–08, three rows, both sublists and return destinations",
     "webkit: A-only 34low on every common exercise, returning from both sublists",
+    "webkit: chapter 07 has only the four remaining exercises in order",
     "webkit: ①–⑦ choices, random, 94 choices and no old selection wording",
+    "webkit: reading55 all 19 problems and three shapes, no pages or string choices",
     "webkit: simulated safe-area insets protect all screen edges within 100svh",
     {
       "engine": "webkit",
@@ -825,15 +829,15 @@
           "bottom": 352.5,
           "left": 193
         },
-        "bar": {
-          "x": 269.203125,
-          "y": 71,
-          "width": 38.796875,
-          "height": 20,
-          "top": 71,
-          "right": 308,
-          "bottom": 91,
-          "left": 269.203125
+        "phase": {
+          "x": 12,
+          "y": 73.3193359375,
+          "width": 111.72666931152344,
+          "height": 12.955078125,
+          "top": 73.3193359375,
+          "right": 123.72666931152344,
+          "bottom": 86.2744140625,
+          "left": 12
         }
       }
     },
@@ -927,15 +931,15 @@
           "bottom": 432,
           "left": 249
         },
-        "bar": {
-          "x": 337.203125,
-          "y": 71,
-          "width": 38.796875,
-          "height": 20,
-          "top": 71,
-          "right": 376,
-          "bottom": 91,
-          "left": 337.203125
+        "phase": {
+          "x": 14,
+          "y": 73.3193359375,
+          "width": 111.72666931152344,
+          "height": 12.955078125,
+          "top": 73.3193359375,
+          "right": 125.72666931152344,
+          "bottom": 86.2744140625,
+          "left": 14
         }
       }
     },
@@ -1029,15 +1033,15 @@
           "bottom": 522,
           "left": 249
         },
-        "bar": {
-          "x": 337.203125,
-          "y": 71,
-          "width": 38.796875,
-          "height": 20,
-          "top": 71,
-          "right": 376,
-          "bottom": 91,
-          "left": 337.203125
+        "phase": {
+          "x": 14,
+          "y": 73.3193359375,
+          "width": 111.72666931152344,
+          "height": 12.955078125,
+          "top": 73.3193359375,
+          "right": 125.72666931152344,
+          "bottom": 86.2744140625,
+          "left": 14
         }
       }
     },
@@ -1131,15 +1135,15 @@
           "bottom": 714,
           "left": 289
         },
-        "bar": {
-          "x": 377.203125,
-          "y": 71,
-          "width": 38.796875,
-          "height": 20,
-          "top": 71,
-          "right": 416,
-          "bottom": 91,
-          "left": 377.203125
+        "phase": {
+          "x": 14,
+          "y": 73.3193359375,
+          "width": 111.72666931152344,
+          "height": 12.955078125,
+          "top": 73.3193359375,
+          "right": 125.72666931152344,
+          "bottom": 86.2744140625,
+          "left": 14
         }
       }
     },
@@ -1233,15 +1237,15 @@
           "bottom": 294,
           "left": 368
         },
-        "bar": {
-          "x": 447.8125,
-          "y": 67,
-          "width": 42.1875,
-          "height": 20,
-          "top": 67,
-          "right": 490,
-          "bottom": 87,
-          "left": 447.8125
+        "phase": {
+          "x": 20,
+          "y": 69.52734375,
+          "width": 121.88363647460938,
+          "height": 14.1328125,
+          "top": 69.52734375,
+          "right": 141.88363647460938,
+          "bottom": 83.66015625,
+          "left": 20
         }
       }
     },
@@ -1335,15 +1339,15 @@
           "bottom": 977.40625,
           "left": 650
         },
-        "bar": {
-          "x": 753.8125,
-          "y": 79,
-          "width": 42.1875,
-          "height": 20,
-          "top": 79,
-          "right": 796,
-          "bottom": 99,
-          "left": 753.8125
+        "phase": {
+          "x": 24,
+          "y": 81.52734375,
+          "width": 121.88363647460938,
+          "height": 14.1328125,
+          "top": 81.52734375,
+          "right": 145.88363647460938,
+          "bottom": 95.66015625,
+          "left": 24
         }
       }
     },
@@ -1437,15 +1441,15 @@
           "bottom": 633,
           "left": 736
         },
-        "bar": {
-          "x": 839.8125,
-          "y": 119,
-          "width": 42.1875,
-          "height": 20,
-          "top": 119,
-          "right": 882,
-          "bottom": 139,
-          "left": 839.8125
+        "phase": {
+          "x": 136,
+          "y": 121.52734375,
+          "width": 121.88363647460938,
+          "height": 14.1328125,
+          "top": 121.52734375,
+          "right": 257.8836364746094,
+          "bottom": 135.66015625,
+          "left": 136
         }
       }
     },

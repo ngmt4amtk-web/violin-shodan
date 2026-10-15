@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeExercise,makeNote,instructionFor,STRINGS,LESSONS} from './dist/content.mjs';
-import {renderScore} from './dist/score.mjs';
+import {renderScore,renderSingle} from './dist/score.mjs';
 import {PitchDetector,AudioEngine,AUDIO_CUES} from './dist/engine.mjs';
 import {targetForNote,centsBetween,keyForShape} from './dist/intonation.mjs';
 import fs from 'node:fs/promises';
 import vm from 'node:vm';
 import {appHarness} from './validation/app-harness.mjs';
+import {READING55_BEFORE} from './validation/reading55-before.mjs';
 const pitches=ns=>ns.filter(n=>!n.rest).map(n=>n.midi);
 const bars=ns=>ns.at(-1).bar+1;
 const barBeats=ns=>{for(let b=0;b<bars(ns);b++)assert.equal(ns.filter(n=>n.bar===b).reduce((s,n)=>s+n.beats,0),ns[0].meter);};
@@ -21,13 +22,34 @@ test('3つの指型・全4弦で音名と半音位置が一致',()=>{
  assert.deepEqual(pitches(alt).slice(0,5),[69,70,72,74,75]);
  assert.deepEqual(pitches(makeExercise('fingers34',{string:'D',variant:'flat'})),pitches(makeExercise('fingers34',{string:'D'})));
 });
-test('固定19問は4小節、4分/2分のみ。4の指を保持',()=>{
+test('19問の既定と形23は改修前の弦・指・音高・長さに全問一致',()=>{
+ assert.equal(READING55_BEFORE.length,19);
  for(let problem=1;problem<=19;problem++){
   const ns=makeExercise('reading55',{problem});assert.equal(bars(ns),4);barBeats(ns);assert.ok(ns.every(n=>[1,2].includes(n.beats)));
-  assert.deepEqual(ns,makeExercise('reading55',{problem}));
+  assert.deepEqual(ns,makeExercise('reading55',{problem,pattern:'23'}));
+  assert.deepEqual(ns.map(n=>[n.string,n.finger,n.midi,n.beats]),READING55_BEFORE[problem-1],`その${problem}`);
  }
  assert.equal(makeExercise('reading55',{problem:10}).filter(n=>n.finger===4).length,2);
  assert.deepEqual(pitches(makeExercise('reading55',{problem:1})),[62,66,67,67,66,64,62,66,67,64,64,62]);
+});
+test('19問の形12・34は弦・指・長さを保持し、2か3の音高だけ半音変わる',()=>{
+ for(let problem=1;problem<=19;problem++)for(const [pattern,changed,delta,intervals] of [['12',2,-1,[0,2,3,5,7]],['34',3,1,[0,2,4,6,7]]]){
+  const before=READING55_BEFORE[problem-1],ns=makeExercise('reading55',{problem,pattern});assert.equal(ns.length,before.length);barBeats(ns);
+  assert.deepEqual(ns.map(n=>[n.string,n.finger,n.beats]),before.map(([s,f,,b])=>[s,f,b]));
+  for(const [i,n] of ns.entries()){
+   assert.equal(n.pattern,pattern);assert.equal(n.midi,before[i][2]+(n.finger===changed?delta:0));assert.equal(n.midi,{G:55,D:62,A:69,E:76}[n.string]+intervals[n.finger]);
+   assert.deepEqual(n.key,keyForShape(n.string,pattern));
+   const svg=renderSingle(n),accidental=n.name.includes('♯')?'sharp':n.name.includes('♭')?'flat':null;
+   assert(svg.includes(`aria-label="${n.name}、${n.beats}拍"`));assert.deepEqual([...svg.matchAll(/data-accidental="(.*?)"/g)].map(m=>m[1]),accidental?[accidental]:[]);
+  }
+  assert.doesNotMatch(renderScore(ns,{},null),/NaN|undefined/);
+  for(const string of ['G','D','A','E'])assert.deepEqual(makeExercise('reading55',{problem,pattern,string}),ns,'弦の保存値で問題を移調しない');
+ }
+});
+test('問題1の音名は選んだ形で変わる',()=>{
+ for(const [pattern,names] of [['23',['レ','ファ♯','ソ','ソ','ファ♯','ミ','レ','ファ♯','ソ','ミ','ミ','レ']],['12',['レ','ファ','ソ','ソ','ファ','ミ','レ','ファ','ソ','ミ','ミ','レ']],['34',['レ','ファ♯','ソ♯','ソ♯','ファ♯','ミ','レ','ファ♯','ソ♯','ミ','ミ','レ']]]){
+  assert.deepEqual(makeExercise('reading55',{problem:1,pattern}).map(n=>n.name),names);console.log(`問題1・形${pattern}: ${names.join('・')}`);
+ }
 });
 test('64番は6段を分割、全弦で最後の開放弦4拍まで',()=>{
  for(let row=1;row<=6;row++)for(const string of Object.keys(STRINGS)){
@@ -43,7 +65,6 @@ test('形の切替は各弦8小節、同じ小節内で臨時記号を取り消�
   assert.ok(svg.includes('data-accidental="natural"'));assert.ok(svg.includes(`data-accidental="${string==='G'?'flat':'sharp'}"`));
   assert.ok(instructionFor(ns[21],ns[20],'switch2').includes('下げて'));
  }
- const connected=makeExercise('connect69');assert.equal(bars(connected),17);assert.equal(connected.at(-1).name,'ド');assert.equal(connected.at(-1).finger,3);barBeats(connected);
 });
 test('新しい音階はすべて長音階。イ長調2octで下2弦と上2弦を切り替え',()=>{
  const cases=[['scale12','C1',60,12,4],['scale12','G2',55,24,8],['scale34','A1',57,12,4],['scale34','E1',64,12,4],['scale34','A2',57,24,8]];
@@ -62,7 +83,7 @@ test('94番は36小節すべてを8段に分けても欠落せず、全弦・3�
  }
 });
 test('追加全課題の全音符・指・譜面の数値に未定義なし',()=>{
- assert.equal(LESSONS.length,41);
+ assert.equal(LESSONS.length,40);
  for(const lesson of LESSONS)for(const string of Object.keys(STRINGS)){
   const ns=makeExercise(lesson.type,{string});assert.ok(!/NaN|undefined/.test(renderScore(ns,{},null)));
  }
@@ -90,7 +111,7 @@ test('実際のメーターは整数表示、別音では音名と修正方向�
 test('画面検査スクリプトは構文が正しく、新章・子一覧・偽マイクの検査を含む',async()=>{
  for(const file of ['validation/check-natural-layout.mjs','validation/check-ui.mjs']){const source=await fs.readFile(file,'utf8');new vm.Script('(async()=>{'+source.replace(/^import .*?;\s*$/gm,'')+'})()');assert(source.includes('addList'));assert(source.includes('varietyList'));assert(source.includes('34low'));}
  for(const file of ['validation/check-deployment.mjs','validation/check-playing.mjs']){const source=await fs.readFile(file,'utf8');new vm.Script('(async()=>{'+source.replace(/^import .*?;\s*$/gm,'').replaceAll('import.meta','moduleMeta')+'})()');}
- const ui=await fs.readFile('validation/check-ui.mjs','utf8');for(const text of ['fakePitch','568','pitchMeter','指を1本ずつ確認する','色々な練習','練習する型','①〜⑧を通す','safe-area-inset-'])assert(ui.includes(text));
+ const ui=await fs.readFile('validation/check-ui.mjs','utf8');for(const text of ['fakePitch','568','pitchMeter','指を1本ずつ確認する','色々な練習','練習する型','①〜⑧を通す','safe-area-inset-','reading55 all 19 problems and three shapes','chapter 07','connect69'])assert(ui.includes(text));
 });
 test('safe areaはヘッダーと各画面に入り、演奏の100svh内に余白を含む',async()=>{
  const css=await fs.readFile('dist/style.css','utf8'),html=await fs.readFile('dist/index.html','utf8');assert(html.includes('viewport-fit=cover'));assert(css.includes('*{box-sizing:border-box}'));

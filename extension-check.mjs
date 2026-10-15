@@ -50,10 +50,9 @@ test('新しい音階はすべて長音階。イ長調2octで下2弦と上2弦�
  for(const [type,scale,root,span,count] of cases){const ns=makeExercise(type,{scale}),ps=pitches(ns);assert.equal(ps[0],root);assert.equal(ps.at(-1),root);assert.equal(Math.max(...ps),root+span);assert.equal(bars(ns),count);barBeats(ns);assert.ok(ps.every(p=>[0,2,4,5,7,9,11].includes((p-root)%12)));}
  const a2=makeExercise('scale34',{scale:'A2'});for(const n of a2)assert.equal(n.pattern,['G','D'].includes(n.string)?'34':'23');assert.equal(a2.at(-1).beats,4);
 });
-test('3と4の8分音符は4/4の3小節、6組往復と形の比較は6小節',()=>{
+test('6組往復と形の比較は引き続き6小節',()=>{
  for(const string of Object.keys(STRINGS)){
-  const ns=makeExercise('eighth34',{string});assert.equal(bars(ns),3);barBeats(ns);assert.equal(ns.at(-1).rest,true);assert.equal(ns[0].meter,4);assert.deepEqual(ns.slice(0,16).map(n=>n.finger),[0,1,2,3,4,3,2,1,0,1,2,3,4,3,2,1]);assert.equal(ns.at(-2).beats,2);assert.equal(ns.at(-1).beats,2);
-  for(const type of ['pairs12','pairs34','compare']){const ns=makeExercise(type,{string});assert.equal(bars(ns),6);barBeats(ns);}
+  for(const type of ['pairs23','pairs12','pairs34','compare']){const ns=makeExercise(type,{string});assert.equal(bars(ns),6);barBeats(ns);}
  }
 });
 test('94番は36小節すべてを8段に分けても欠落せず、全弦・3形で使える',()=>{
@@ -63,7 +62,7 @@ test('94番は36小節すべてを8段に分けても欠落せず、全弦・3�
  }
 });
 test('追加全課題の全音符・指・譜面の数値に未定義なし',()=>{
- assert.equal(LESSONS.length,47);
+ assert.equal(LESSONS.length,41);
  for(const lesson of LESSONS)for(const string of Object.keys(STRINGS)){
   const ns=makeExercise(lesson.type,{string});assert.ok(!/NaN|undefined/.test(renderScore(ns,{},null)));
  }
@@ -89,13 +88,24 @@ test('実際のメーターは整数表示、別音では音名と修正方向�
  app.api.setReading({frequency:null,rms:0,confidence:0});app.api.observeMic(time+.07);assert.equal(app.node('#pitchCents').textContent,'— ¢');assert.equal(app.node('#pitchNeedle').hidden,true);
 });
 test('画面検査スクリプトは構文が正しく、新章・子一覧・偽マイクの検査を含む',async()=>{
- for(const file of ['validation/check-natural-layout.mjs','validation/check-ui.mjs']){const source=await fs.readFile(file,'utf8');new vm.Script('(async()=>{'+source.replace(/^import .*?;\s*$/gm,'')+'})()');assert(source.includes('addList'));assert(source.includes('34low'));}
+ for(const file of ['validation/check-natural-layout.mjs','validation/check-ui.mjs']){const source=await fs.readFile(file,'utf8');new vm.Script('(async()=>{'+source.replace(/^import .*?;\s*$/gm,'')+'})()');assert(source.includes('addList'));assert(source.includes('varietyList'));assert(source.includes('34low'));}
  for(const file of ['validation/check-deployment.mjs','validation/check-playing.mjs']){const source=await fs.readFile(file,'utf8');new vm.Script('(async()=>{'+source.replace(/^import .*?;\s*$/gm,'').replaceAll('import.meta','moduleMeta')+'})()');}
- const ui=await fs.readFile('validation/check-ui.mjs','utf8');assert(ui.includes('fakePitch'));assert(ui.includes('568'));assert(ui.includes('pitchMeter'));
+ const ui=await fs.readFile('validation/check-ui.mjs','utf8');for(const text of ['fakePitch','568','pitchMeter','指を1本ずつ確認する','色々な練習','練習する型','①〜⑧を通す','safe-area-inset-'])assert(ui.includes(text));
+});
+test('safe areaはヘッダーと各画面に入り、演奏の100svh内に余白を含む',async()=>{
+ const css=await fs.readFile('dist/style.css','utf8'),html=await fs.readFile('dist/index.html','utf8');assert(html.includes('viewport-fit=cover'));assert(css.includes('*{box-sizing:border-box}'));
+ for(const selector of ['.app-header','.performance-viewport']){
+  const blocks=[...css.matchAll(new RegExp(selector.replaceAll('.','\\.')+'\\{([^}]+)\\}','g'))].map(m=>m[1]);assert(blocks.length>=3);
+  for(const block of blocks){
+   if(block.includes('padding:')){const padding=block.match(/(?:^|;)padding:([^;]+)/)[1];for(const edge of selector==='.app-header'?['top','right','left']:['top','right','bottom','left'])assert(padding.includes(`env(safe-area-inset-${edge},0px)`));}
+   for(const edge of ['top','right','bottom','left'])if(block.includes('padding-'+edge+':')&&!(selector==='.app-header'&&edge==='bottom'))assert(block.match(new RegExp('padding-'+edge+':([^;]+)'))[1].includes(`env(safe-area-inset-${edge},0px)`));
+  }
+ }
+ const workspace=css.match(/\.workspace\{([^}]+)\}/)[1],player=css.match(/\.performance-viewport\{([^}]+)\}/)[1];for(const edge of ['right','bottom','left'])assert(workspace.includes(`env(safe-area-inset-${edge},0px)`));assert(player.includes('height:100svh;'));assert(player.includes('box-sizing:border-box;'));assert(!/height:calc\(100svh\s*\+/.test(player));
 });
 test('サービスワーカーは新アプリだけを保存・読込・旧キャッシュ削除し、他アプリを保全する',async()=>{
  const source=await fs.readFile('dist/sw.js','utf8'),listeners={},opened=[],deleted=[],scope='https://example.test/violin-shodan/',request={method:'GET',url:scope+'index.html'};
- const preserved=['genshirube-v1-20261015b','genshirube-v1-old','other-app','violin-shodanx-old'],stale=['violin-shodan-v1-old','violin-shodan-v0'],data=new Map([...preserved,...stale].map(name=>[name,new Map([[request.url,name]])]));let claimed=false,files;
+ const preserved=['genshirube-v1-20261015b','genshirube-v1-old','other-app','violin-shodanx-old'],stale=['violin-shodan-v1-20261015a','violin-shodan-v1-old','violin-shodan-v0'],data=new Map([...preserved,...stale].map(name=>[name,new Map([[request.url,name]])]));let claimed=false,files;
  const context=vm.createContext({self:{registration:{scope},clients:{claim(){claimed=true;}},addEventListener(name,fn){listeners[name]=fn;}},caches:{async keys(){return [...data.keys()];},async open(name){assert.match(name,/^violin-shodan-/);opened.push(name);if(!data.has(name))data.set(name,new Map());return {async addAll(paths){files=Array.from(paths);data.get(name).set(request.url,'new app');},async match(req){return data.get(name).get(req.url);},async put(req,value){data.get(name).set(req.url,value);}};},async delete(name){deleted.push(name);return data.delete(name);}},async fetch(){throw new Error('offline');}});
  vm.runInContext(source,context);let pending;listeners.install({waitUntil(p){pending=p;}});await pending;const current=opened[0];assert.match(current,/^violin-shodan-/);assert(!stale.includes(current));assert(files.includes('./index.html'));
  listeners.activate({waitUntil(p){pending=p;}});await pending;assert.equal(claimed,true);assert.deepEqual(deleted.sort(),stale.sort());assert(data.has(current));

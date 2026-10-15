@@ -1,10 +1,12 @@
 {
-  "at": "2026-10-15T06:28:31.104Z",
+  "at": "2026-10-15T09:03:05.384Z",
   "base": "http://127.0.0.1:8773",
   "results": [
-    "chrome: all 47 introduction / setup flows and bounded preview",
-    "chrome: chapters 01–08, common menus and add-finger sublists",
-    "chrome: A-only 34low on every common exercise, returning from child lesson",
+    "chrome: all 41 introduction / setup flows and bounded preview",
+    "chrome: chapters 01–08, three rows, both sublists and return destinations",
+    "chrome: A-only 34low on every common exercise, returning from both sublists",
+    "chrome: ①–⑦ choices, random, 94 choices and no old selection wording",
+    "chrome: simulated safe-area insets protect all screen edges within 100svh",
     {
       "engine": "chrome",
       "viewport": [
@@ -726,10 +728,13 @@
     "chrome: fake microphone meter fits 320×568, sign, range, direction and suppression",
     "chrome: continuous mode counts four on start and resume",
     "chrome: old storage and A=440 / strict preferences survive reload",
+    "chrome: removed IDs and old row text initialize and return to defaults",
     "chrome: denied microphone retains choices and offers no-mic fallback",
-    "webkit: all 47 introduction / setup flows and bounded preview",
-    "webkit: chapters 01–08, common menus and add-finger sublists",
-    "webkit: A-only 34low on every common exercise, returning from child lesson",
+    "webkit: all 41 introduction / setup flows and bounded preview",
+    "webkit: chapters 01–08, three rows, both sublists and return destinations",
+    "webkit: A-only 34low on every common exercise, returning from both sublists",
+    "webkit: ①–⑦ choices, random, 94 choices and no old selection wording",
+    "webkit: simulated safe-area insets protect all screen edges within 100svh",
     {
       "engine": "webkit",
       "viewport": [
@@ -1451,6 +1456,7 @@
     "webkit: fake microphone meter fits 320×568, sign, range, direction and suppression",
     "webkit: continuous mode counts four on start and resume",
     "webkit: old storage and A=440 / strict preferences survive reload",
+    "webkit: removed IDs and old row text initialize and return to defaults",
     "webkit: denied microphone retains choices and offers no-mic fallback"
   ],
   "errors": []

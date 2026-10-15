@@ -4,7 +4,7 @@ import {targetForNote} from '../dist/intonation.mjs';
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const base=process.env.APP_URL||'http://127.0.0.1:8773',results=[],errors=[];
-async function enter(p,id){await p.goto(base);await p.locator(`[data-chapter="${LESSONS.find(l=>l.id===id).unit}"]`).click();if(LESSONS.find(l=>l.id===id).menu==='add')await p.locator('[data-action=addList]').click();await p.locator(`[data-lesson="${id}"]`).click();await p.locator('[data-action=setup]').click();}
+async function enter(p,id){const l=LESSONS.find(l=>l.id===id);await p.goto(base);await p.locator(`[data-chapter="${l.unit}"]`).click();if(l.menu==='add')await p.locator('[data-action=addList]').click();else if(l.menu==='variety')await p.locator('[data-action=varietyList]').click();await p.locator(`[data-lesson="${id}"]`).click();await p.locator('[data-action=setup]').click();}
 async function inspect(p,label){
  const g=await p.evaluate(()=>{
   const r=e=>e.getBoundingClientRect(),center=e=>{const b=r(e);return b.y+b.height/2;};
@@ -31,7 +31,8 @@ for(const engine of ['chrome','webkit']){
   }
  }
  for(const l of LESSONS.filter(l=>l.pattern==='34')){await p.setViewportSize({width:320,height:568});await enter(p,l.id);await p.locator('[data-option=string][data-value=A]').click();await p.locator('[data-select-option=variant]').selectOption('flat');await inspect(p,engine+' '+l.id+' 34low 320');}
- for(const id of ['switch3','switch23','eighth23','pivot12','triples34']){await enter(p,id);for(const string of ['G','D','A','E']){await p.locator(`[data-option=string][data-value=${string}]`).click();await inspect(p,engine+' '+id+' '+string+' 320');}}
+ for(const id of ['switch3','switch23','keep23','pivot12','triples34']){await enter(p,id);for(const string of ['G','D','A','E']){await p.locator(`[data-option=string][data-value=${string}]`).click();await inspect(p,engine+' '+id+' '+string+' 320');}}
+ for(const id of ['keep23','keep12','keep34']){await enter(p,id);for(let row=1;row<=7;row++){await p.locator('[data-select-option=row]').selectOption(String(row));await inspect(p,`${engine} ${id} form ${row} 320`);}}
  await p.setViewportSize({width:390,height:740});await enter(p,'fingers');await p.screenshot({path:`validation/${engine}-natural-fingers.png`,fullPage:true});
  await enter(p,'application94');await p.screenshot({path:`validation/${engine}-natural-application94.png`,fullPage:true});
  await p.locator('[data-action=intro]').click();assert.equal(await p.locator('.intro-visual .pattern-diagram').count(),3);

@@ -5,21 +5,59 @@ import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const BASE=process.env.APP_URL||'http://127.0.0.1:8773';const results=[];const errors=[];
 async function record(name,run){await run();results.push(name);console.log('PASS',name);}
-async function enter(page,id){await page.goto(BASE);const l=LESSONS.find(l=>l.id===id);await page.locator(`[data-chapter="${l.unit}"]`).click();if(l.menu==='add')await page.locator('[data-action=addList]').click();await page.locator(`[data-lesson="${id}"]`).click();await page.locator('[data-action="setup"]').click();}
+async function enter(page,id){await page.goto(BASE);const l=LESSONS.find(l=>l.id===id);await page.locator(`[data-chapter="${l.unit}"]`).click();if(l.menu==='add')await page.locator('[data-action=addList]').click();else if(l.menu==='variety')await page.locator('[data-action=varietyList]').click();await page.locator(`[data-lesson="${id}"]`).click();await page.locator('[data-action="setup"]').click();}
 async function startManual(page){const mic=page.locator('[data-mic]');if(await mic.count())await mic.uncheck();await page.locator('[data-option=mode][data-value=wait]').click();await page.locator('#tempoNumber').fill('180');await page.locator('#tempoNumber').press('Tab');await page.locator('[data-action=start]').click();await page.locator('#performanceViewport[data-phase=playing]').waitFor();assert.equal(await page.locator('#countdownArea').isHidden(),true);await page.locator('#noteScore g.active').waitFor();}
 async function geometry(page){return page.evaluate(()=>{const bounds=s=>document.querySelector(s)?.getBoundingClientRect().toJSON();return {width:innerWidth,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,viewport:bounds('#performanceViewport'),score:bounds('#noteScore'),controls:bounds('.practice-controls'),guide:bounds('.guidance-panel'),footer:bounds('.performance-footer'),body:bounds('.performance-body'),start:bounds('.start-button'),meter:bounds('.pitch-meter'),next:bounds('.next-label'),beat:bounds('#beatTrack'),bar:bounds('#barLabel')};});}
 for(const engine of ['chrome','webkit']){
  const browser=engine==='chrome'?await chromium.launch({channel:'chrome',headless:true}):await webkit.launch({headless:true,executablePath:'/Users/ngmt.mtk/Library/Caches/ms-playwright/webkit-2359/pw_run.sh'});
  const context=await browser.newContext({viewport:{width:390,height:740},deviceScaleFactor:1});const page=await context.newPage();page.on('pageerror',e=>errors.push(`${engine}: ${e.message}`));
- await record(`${engine}: all 47 introduction / setup flows and bounded preview`,async()=>{
+ await record(`${engine}: all 41 introduction / setup flows and bounded preview`,async()=>{
   for(const l of LESSONS){await enter(page,l.id);assert.equal(await page.locator('h1').textContent(),l.title);assert(await page.locator('.compact-score .score-system').count()<=2);assert(await page.locator('[data-role=staff-line]').count()>=5);const g=await geometry(page);assert(!g.overflow,l.id+' overflow');assert(await page.locator('button').evaluateAll(bs=>bs.filter(b=>b.getClientRects().length).every(b=>b.getBoundingClientRect().height>=44)),l.id+' small button');assert(g.start.bottom<=810,l.id+' setup excessive height '+g.start.bottom);}
  });
- await record(`${engine}: chapters 01–08, common menus and add-finger sublists`,async()=>{
+ await record(`${engine}: chapters 01–08, three rows, both sublists and return destinations`,async()=>{
+  const checkList=async items=>{assert.deepEqual(await page.locator('.lesson-row strong').allTextContents(),items.map(l=>l.title));const subs=await page.locator('.lesson-row small').allTextContents();assert.deepEqual(subs,items.map(l=>l.sub));assert.equal(new Set(subs).size,subs.length);assert(subs.every(Boolean));};
   await page.goto(BASE);assert.deepEqual(await page.locator('.chapter-row .index').allTextContents(),['01','02','03','04','05','06','07','08']);assert.deepEqual(await page.locator('.chapter-row strong').allTextContents(),CHAPTERS);
-  for(const unit of [1,3,4]){await page.goto(BASE);await page.locator(`[data-chapter="${unit}"]`).click();assert.deepEqual(await page.locator('.lesson-row strong').allTextContents(),chapterItems(unit).map(l=>l.title));await page.locator('[data-action=addList]').click();await page.waitForFunction(()=>document.querySelector('h1')===document.activeElement);assert.deepEqual(await page.locator('.lesson-row strong').allTextContents(),['2の指を足す','3の指を足す','4の指を足す']);await page.locator('[data-action=chapters]').click();assert.equal(await page.locator('.lesson-row').count(),9);}
+  for(const unit of [1,3,4]){
+   await page.goto(BASE);await page.locator(`[data-chapter="${unit}"]`).click();const items=chapterItems(unit);await checkList(items);assert.deepEqual(await page.locator('.lesson-row strong').allTextContents(),['この形をつかむ','指を1本ずつ確認する','色々な練習']);
+   for(const [index,action,titles] of [[1,'addList',['2の指を足す','3の指を足す','4の指を足す']],[2,'varietyList',['4本の指を置いて、離していく','全パターンの動きを練習する','形を保って続ける','開放弦を軸に往復する','3音ずつ上り下り']]]){
+    await page.locator(`[data-action=${action}]`).click();await page.waitForFunction(()=>document.querySelector('h1')===document.activeElement);assert.equal(await page.locator('h1').textContent(),items[index].title);assert.deepEqual(await page.locator('.lesson-row strong').allTextContents(),titles);await checkList(items[index].children);
+    await page.locator('[data-action=settings]').click();await page.locator('[data-action=closeSettings]').click();await checkList(items[index].children);
+    for(const l of items[index].children){
+     await page.locator(`[data-lesson="${l.id}"]`).click();await page.locator('[data-action=setup]').click();await startManual(page);await page.locator('[data-action=exitPractice]').click();await page.locator('[data-action=intro]').click();await page.locator(`[data-action=${action}]`).click();await checkList(items[index].children);
+    }
+    await page.locator('[data-action=chapters]').click();assert.equal(await page.locator('h1').textContent(),CHAPTERS[unit]);await checkList(items);assert.equal(await page.locator('.lesson-row').count(),3);
+   }
+  }
  });
- await record(`${engine}: A-only 34low on every common exercise, returning from child lesson`,async()=>{
-  for(const l of LESSONS.filter(l=>l.pattern==='34')){await enter(page,l.id);await page.locator('[data-option=string][data-value=A]').click();await page.locator('[data-select-option=variant]').selectOption('flat');assert(await page.locator('[data-accidental=flat]').count()>0);assert(!(await page.locator('.lesson-heading .eyebrow').textContent()).includes('p.'));await page.locator('[data-action=intro]').click();assert((await page.locator('.instruction-list').textContent()).includes('シ♭'));if(l.menu==='add'){await page.locator('[data-action=addList]').click();assert.equal(await page.locator('.lesson-row').count(),3);await page.locator('[data-action=chapters]').click();assert.equal(await page.locator('.lesson-row').count(),9);}}
+ await record(`${engine}: A-only 34low on every common exercise, returning from both sublists`,async()=>{
+  for(const l of LESSONS.filter(l=>l.pattern==='34')){
+   await enter(page,l.id);await page.locator('[data-option=string][data-value=A]').click();await page.locator('[data-select-option=variant]').selectOption('flat');assert(await page.locator('[data-accidental=flat]').count()>0);assert(!(await page.locator('.lesson-heading .eyebrow').textContent()).includes('p.'));await page.locator('[data-action=intro]').click();assert((await page.locator('.instruction-list').textContent()).includes('シ♭'));
+   if(['add','variety'].includes(l.menu)){await page.locator(`[data-action=${l.menu==='add'?'addList':'varietyList'}]`).click();assert.equal(await page.locator('.lesson-row').count(),l.menu==='add'?3:5);await page.locator('[data-action=chapters]').click();assert.equal(await page.locator('.lesson-row').count(),3);}
+  }
+ });
+ await record(`${engine}: ①–⑦ choices, random, 94 choices and no old selection wording`,async()=>{
+  for(const id of ['keep23','keep12','keep34','application94']){
+   await enter(page,id);const count=id==='application94'?8:7,labels=['①','②','③','④','⑤','⑥','⑦','⑧'].slice(0,count),selector=page.getByLabel('練習する型',{exact:true});
+   assert.deepEqual(await selector.locator('option').allTextContents(),[...labels,'ランダム',...(count===8?['①〜⑧を通す']:[])]);assert.equal(await page.locator('.select-field').filter({has:selector}).locator('span').textContent(),'練習する型');
+   for(let row=1;row<=count;row++){
+    await selector.selectOption(String(row));assert.equal(await selector.inputValue(),String(row));assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('violin-shodan-v1')).options.row),String(row));assert.doesNotMatch(await page.locator('body').innerText(),/段目|練習する段/);
+    if(count===7)assert.equal(await page.locator('.score-preview .section-line>span').textContent(),row===7?'4小節':'5小節');
+    if(id==='keep34'){await page.locator('[data-select-option=variant]').selectOption('flat');assert(await page.locator('[data-accidental=flat]').count()>0);}
+   }
+   await selector.selectOption('random');const chosen=await page.evaluate(()=>JSON.parse(localStorage.getItem('violin-shodan-v1')).options.resolvedRow);assert(chosen>=1&&chosen<=count);assert((await page.locator('.random-row').textContent()).includes(labels[chosen-1]));await page.getByRole('button',{name:'別の型へ ↻',exact:true}).click();const next=await page.evaluate(()=>JSON.parse(localStorage.getItem('violin-shodan-v1')).options.resolvedRow);assert(next>=1&&next<=count);assert.notEqual(next,chosen);assert.doesNotMatch(await page.locator('body').innerText(),/段目|練習する段/);
+   if(count===8){await selector.selectOption('all');assert.equal(await page.locator('.score-preview .section-line>span').textContent(),'36小節');}
+  }
+ });
+ await record(`${engine}: simulated safe-area insets protect all screen edges within 100svh`,async()=>{
+  const css=await fs.readFile('dist/style.css','utf8');
+  for(const [width,height,insets] of [[390,844,{top:59,right:0,bottom:34,left:0}],[844,390,{top:0,right:59,bottom:21,left:59}]]){
+   const safe=await browser.newContext({viewport:{width,height}}),p=await safe.newPage();p.on('pageerror',e=>errors.push(`${engine} safe area: ${e.message}`));await p.goto(BASE);
+   await p.addStyleTag({content:css.replace(/env\(safe-area-inset-(top|right|bottom|left),0px\)/g,(_,edge)=>insets[edge]+'px')});
+   const checkHeader=async()=>{const boxes=await p.locator('.brand, .app-header>[data-action=settings]').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().toJSON()));for(const b of boxes){assert(b.top>=insets.top);assert(b.left>=insets.left);assert(b.right<=width-insets.right);}assert(!(await geometry(p)).overflow);};
+   await checkHeader();await p.locator('[data-chapter="1"]').click();await checkHeader();await p.locator('[data-action=varietyList]').click();await checkHeader();await p.locator('[data-lesson=keep23]').click();await checkHeader();await p.locator('[data-action=setup]').click();await checkHeader();await p.locator('[data-action=settings]').click();await checkHeader();await p.locator('[data-action=closeSettings]').click();
+   await startManual(p);const g=await geometry(p),padding=await p.locator('#performanceViewport').evaluate(e=>{const s=getComputedStyle(e);return {top:parseFloat(s.paddingTop),right:parseFloat(s.paddingRight),bottom:parseFloat(s.paddingBottom),left:parseFloat(s.paddingLeft),boxSizing:s.boxSizing};});
+   assert.equal(padding.boxSizing,'border-box');assert.equal(padding.top,8+insets.top);assert.equal(padding.bottom,8+insets.bottom);assert(padding.left>insets.left&&padding.right>insets.right);assert.equal(g.viewport.height,height);assert(g.controls.bottom<=height-insets.bottom);assert(g.guide.bottom<=g.controls.top);assert(!g.overflow);await safe.close();
+  }
  });
  await record(`${engine}: manual player fits phone, short phone, landscape, tablet, desktop`,async()=>{
   for(const [width,height] of [[320,568],[390,650],[390,740],[430,932],[740,390],[820,1180],[1280,800]]){
@@ -58,6 +96,12 @@ for(const engine of ['chrome','webkit']){
  });
  await record(`${engine}: old storage and A=440 / strict preferences survive reload`,async()=>{
   await page.goto(BASE);await page.evaluate(()=>localStorage.setItem('violin-shodan-v1',JSON.stringify({lessonId:'gone',options:{string:'bad',mode:'removed',scale:'missing'},preferences:{difficulty:'old',a4:1}})));await page.reload();await page.locator('[data-action=settings]').click();assert.equal(await page.locator('#difficulty').inputValue(),'normal');assert.equal(await page.locator('#a4').inputValue(),'442');await page.locator('#difficulty').selectOption('strict');await page.locator('#a4').selectOption('440');await page.reload();await page.locator('[data-action=settings]').click();assert.equal(await page.locator('#difficulty').inputValue(),'strict');assert.equal(await page.locator('#a4').inputValue(),'440');
+ });
+ await record(`${engine}: removed IDs and old row text initialize and return to defaults`,async()=>{
+  for(const lessonId of ['eighth23','eighth12','eighth34','order','order12','order34','keep23','keep12','keep34','application94']){
+   await page.goto(BASE);await page.evaluate(lessonId=>localStorage.setItem('violin-shodan-v1',JSON.stringify({lessonId,options:{row:'6段目',resolvedRow:'6段目',string:'bad'}})),lessonId);await page.reload();assert.equal(await page.locator('.chapter-row').count(),8);
+   const l=LESSONS.find(l=>l.id===lessonId);await enter(page,l?lessonId:'open');if(l)assert.equal(await page.getByLabel('練習する型',{exact:true}).inputValue(),'1');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('violin-shodan-v1')));assert.equal(saved.lessonId,l?lessonId:'open');assert.equal(saved.options.row,'1');assert.equal(saved.options.string,'A');assert.doesNotMatch(await page.locator('body').innerText(),/段目|練習する段/);
+  }
  });
  await record(`${engine}: denied microphone retains choices and offers no-mic fallback`,async()=>{
   await page.addInitScript(()=>{if(navigator.mediaDevices)navigator.mediaDevices.getUserMedia=async()=>{throw new DOMException('denied','NotAllowedError');};});await enter(page,'add3');await page.locator('[data-option=string][data-value=G]').click();await page.locator('[data-action=start]').click();await page.locator('[data-action=startNoMic]').waitFor();assert.equal(await page.locator('[data-option=string][data-value=G]').getAttribute('aria-pressed'),'true');await page.locator('[data-action=startNoMic]').click();await page.locator('#performanceViewport').waitFor();

@@ -92,6 +92,20 @@ test('SVG: すべての譜面・指/色/音名なしでもNaNなし',()=>{
   const svg=renderScore(ns,prefs,group);assert.ok(!/NaN|undefined/.test(svg));assert.ok(svg.includes('<svg'));
  }for(const n of ns)assert.ok(!/NaN|undefined/.test(renderSingle(n,{})));}
 });
+test('SVG: 全課題の単音・小節・連続五線・プレビューに小節番号のtextがない',()=>{
+ for(const [l,o] of exerciseCases()){
+  const ns=makeExercise(l.type,o,()=>.37),preview=ns.filter(n=>n.bar<6),barsPerSystem=Math.ceil(Math.min(ns.at(-1).bar+1,6)/2);
+  for(const prefs of [{},{colors:false,fingers:false,names:false}]){
+   const scores=[renderScore(ns,prefs,null),renderSystems(ns,prefs,3),renderSystems(preview,prefs,barsPerSystem,{minWidth:380,compact:true}),...ns.map(n=>renderSingle(n,prefs))];
+   for(const svg of scores){
+    // 拍子記号と指番号は必要な数字なので、小節番号の検査から除く。
+    const body=svg.replace(/<g\b[^>]*data-role="time-signature"[^>]*>[\s\S]*?<\/g>/g,'').replace(/<text\b[^>]*data-role="finger"[^>]*>[\s\S]*?<\/text>/g,'');
+    const barNumbers=[...body.matchAll(/<text\b[^>]*>([\s\S]*?)<\/text>/g)].filter(m=>/^\d+$/.test(m[1].replace(/<[^>]*>/g,'').trim()));
+    assert.equal(barNumbers.length,0,l.id+JSON.stringify(o)+JSON.stringify(prefs));
+   }
+  }
+ }
+});
 
 const near=(actual,expected,tolerance=.002)=>assert.ok(Math.abs(actual-expected)<=tolerance,`${actual} != ${expected} (±${tolerance})`);
 test('開放弦ランダム1000種: 4拍、8分は整数拍から2個、全音符は小節頭',()=>{
@@ -319,25 +333,25 @@ test('保存済み目標表の照合・Bravura字形と新規モジュールの�
  const sw=await fs.readFile('dist/sw.js','utf8');assert(sw.includes('violin-shodan-v1-20261016a'));for(const name of ['intonation','settings'])assert(sw.includes(name+'.mjs'));assert(!(await fs.readFile('dist/score.mjs','utf8')).includes('slur'));assert((await fs.readFile('dist/glyphs.mjs','utf8')).includes('Bravura'));
  assert((await fs.readFile('DESIGN.md','utf8')).includes('## 2026-10-15 改修'));const readme=await fs.readFile('README.md','utf8');for(const row of rows.filter(r=>r.available!==false))assert(readme.includes(`| ${row.finger} | ${row.name} | ${row.centsFromET>=0?'+':''}${row.centsFromET.toFixed(3)} | ${row.hz442.toFixed(3)} |`));
 });
-test('小さな小節数だけをDOMから除き、見出し・全譜ボタン・説明を保つ',async()=>{
+test('選択画面の小節数は消したまま、演奏・全譜の小節位置は現在音に追従する',async()=>{
  for(const l of LESSONS){
   const app=appHarness();app.api.enterLesson(l.id);app.api.navigate('setup');const ns=makeExercise(l.id),bars=ns.at(-1).bar+1,setup=app.node('#app').innerHTML;
-  assert(setup.includes(`<div class="section-line"><h2>${bars>6?'はじめの6小節':'この練習の楽譜'}</h2></div>`));assert.doesNotMatch(setup,/barLabel|scorePageLabel|>\d+\s*小節(?:目)?</);
+  assert(setup.includes(`<div class="section-line"><h2>${bars>6?'はじめの6小節':'この練習の楽譜'}</h2></div>`));assert.doesNotMatch(setup,/>\d+\s*小節(?:目)?</);
   if(bars>6)assert(setup.includes(`>全${bars}小節を見る `));
-  app.api.setOptions({mic:false,mode:'wait'});await app.api.startPractice();app.api.advanceNote();const play=app.node('#app').innerHTML;
-  assert.doesNotMatch(play,/barLabel|scorePageLabel|>\d+\s*小節(?:目)?<|>全\d+小節 · 今/);assert(play.includes('<div class="section-line"><h2>楽譜を見ながら</h2></div>'));assert(play.includes('全体の楽譜 ↓'));
+  app.api.setOptions({mic:false,mode:'wait'});await app.api.startPractice();const play=app.node('#app').innerHTML;
+  assert(play.includes('<div class="playing-head"><span id="phaseLabel">準備中</span><span id="barLabel"></span></div>'));assert(play.includes('<div class="section-line"><h2>楽譜を見ながら</h2><span id="scorePageLabel"></span></div>'));assert(play.includes('全体の楽譜 ↓'));
+  for(const n of ns){assert.equal(app.node('#barLabel').textContent,`${n.bar+1} 小節目`,l.id);assert.equal(app.node('#scorePageLabel').textContent,`全${bars}小節 · 今 ${n.bar+1}小節目`,l.id);app.api.advanceNote();}
  }
  const app=appHarness();app.api.enterLesson('reading55');assert(app.node('#app').innerHTML.includes('どれも4小節です。'));
- for(const file of ['app.mjs','index.html'])assert.doesNotMatch(await fs.readFile('dist/'+file,'utf8'),/barLabel|scorePageLabel/);
 });
 test('19問はページ・弦選択なし、94番と同じ3つの形を選んで保存できる',async()=>{
- const labels=['2と3がくっつく形','1と2がくっつく形','3と4がくっつく形'];
+ const labels=['2と3','1と2','3と4'],ariaLabels=['2と3がくっつく形','1と2がくっつく形','3と4がくっつく形'];
  const reading=LESSONS.find(l=>l.id==='reading55');assert.equal(reading.page,null);assert.equal(lessonPage(reading),null);
  for(const id of ['reading55','application94']){
   const app=appHarness();app.api.enterLesson(id);const intro=app.node('#app').innerHTML;assert.equal((intro.match(/class="pattern-diagram /g)||[]).length,3);
   if(id==='reading55'){assert.doesNotMatch(intro,/p\.|音は問題ごとに決まっています/);assert(intro.includes('形を選べます'));assert(intro.includes('次に、問題と指の形を選びます。'));}
   app.api.navigate('setup');assert.equal(app.api.state().options.pattern,'23');
-  assert.deepEqual([...app.node('#app').innerHTML.matchAll(/<button[^>]+data-option="pattern"[^>]*>(.*?)<\/button>/g)].map(m=>m[1]),labels);
+  const buttons=[...app.node('#app').innerHTML.matchAll(/<button[^>]+data-option="pattern"[^>]*>(.*?)<\/button>/g)];assert.deepEqual(buttons.map(m=>m[1]),labels);assert.deepEqual(buttons.map(m=>m[0].match(/aria-label="([^"]+)"/)?.[1]),ariaLabels);assert(app.node('#app').innerHTML.includes('<span class="field-title">指の形</span>'));
   for(const pattern of ['23','12','34']){
    await app.click({option:'pattern',value:pattern});assert.equal(app.api.state().options.pattern,pattern);const saved=JSON.parse(app.storage.get('violin-shodan-v1'));assert.equal(saved.options.pattern,pattern);
    const reloaded=appHarness(JSON.stringify(saved));reloaded.api.enterLesson(id);assert.equal(reloaded.api.state().options.pattern,pattern);

@@ -88,6 +88,22 @@ test('追加全課題の全音符・指・譜面の数値に未定義なし',()=
   const ns=makeExercise(lesson.type,{string});assert.ok(!/NaN|undefined/.test(renderScore(ns,{},null)));
  }
 });
+test('やり方・選択・演奏の楽譜に小節番号のtextがなく、読み上げ用の小節位置は残る',async()=>{
+ const check=html=>{
+  const scores=[...html.matchAll(/<svg\b[^>]*class="(?:score-bar|score-system)"[^>]*>[\s\S]*?<\/svg>/g)];
+  for(const [svg] of scores){
+   const body=svg.replace(/<g\b[^>]*data-role="time-signature"[^>]*>[\s\S]*?<\/g>/g,'').replace(/<text\b[^>]*data-role="finger"[^>]*>[\s\S]*?<\/text>/g,'');
+   const barNumbers=[...body.matchAll(/<text\b[^>]*>([\s\S]*?)<\/text>/g)].filter(m=>/^\d+$/.test(m[1].replace(/<[^>]*>/g,'').trim()));
+   assert.equal(barNumbers.length,0);assert.match(svg,/aria-label="[^"]*小節(?:目)?"/);
+  }
+  return scores.length;
+ };
+ for(const lesson of LESSONS){
+  const app=appHarness();app.api.enterLesson(lesson.id);check(app.node('#app').innerHTML);app.api.navigate('setup');assert(check(app.node('#app').innerHTML)>0);
+  app.api.setOptions({mic:false,mode:'wait'});await app.api.startPractice();assert(check(app.node('#practiceScore').innerHTML)>0);
+  for(const n of makeExercise(lesson.type)){const current=app.node('#noteScore').innerHTML;assert.equal(check(current),1);assert(current.includes(`aria-label="${n.bar+1}小節目"`));app.api.advanceNote();}
+ }
+});
 test('YIN: 全形の実目標Hzと上下オクターブを44.1/48kHzで取り違えない',()=>{
  for(const rate of [44100,48000])for(const string of Object.keys(STRINGS))for(const pattern of ['23','12','34',...(string==='A'?['34low']:[])])for(let finger=0;finger<=4;finger++)for(const octave of [.5,1,2]){
   const n=makeNote(string,finger,1,{pattern,key:keyForShape(string,pattern)}),hz=targetForNote(n).targetHz*octave,detector=new PitchDetector(rate),wave=Float32Array.from({length:4096},(_,i)=>.008*(Math.sin(2*Math.PI*hz*i/rate)+.4*Math.sin(4*Math.PI*hz*i/rate))),result=detector.detect(wave,'high');

@@ -52,7 +52,7 @@ export function renderScore(notes,settings={},group=0){
   const noteX=n=>left+(n.start%meter)*space+13;
   // 選択の背景を先に描き、五線・加線・音符をその上に保つ。
   let body=ns.map(n=>`<rect data-score-index="${n.index}" class="note-highlight" x="${noteX(n)-21}" y="19" width="43" height="120" rx="12" fill="transparent"/>`).join('');
-  body+=staffLines(width)+clef(14,96)+`<text x="12" y="159" font-size="12" fill="#8b9189">${bar+1}</text>`;
+  body+=staffLines(width)+clef(14,96);
   if(bar===0)body+=`<g data-role="time-signature" fill="#263d38" text-anchor="middle" font-family="serif" font-weight="700" font-size="24"><text x="52" y="73">${meter}</text><text x="52" y="95">4</text></g>`;
   const accidentals=new Map();
   for(const n of ns){const x=noteX(n);
@@ -89,7 +89,6 @@ export function renderSystems(notes,settings={},barsPerSystem=3,layout={}){
   const width=cursor+14;let backgrounds='',music='';
   for(const plan of plans){const {bar,ns,x,width:bw}=plan,meter=ns[0].meter||4,accidentals=new Map();
    const noteX=n=>ns.length===1?x+bw/2:x+20+(n.start-ns[0].start)*(bw-32)/Math.max(ns.reduce((s,n)=>s+n.beats,0),meter);
-   music+=`<text x="${x+5}" y="19" font-size="10" fill="#697384">${bar+1}</text>`;
    for(const n of ns){const nx=noteX(n);
     backgrounds+=`<rect data-score-index="${n.index}" class="note-highlight" x="${nx-15}" y="23" width="30" height="99" rx="5" fill="transparent"/>`;
     const decorate=t=>{const a=t.alteration??(t.name.includes('♯')?1:t.name.includes('♭')?-1:0),prev=accidentals.get(t.step)||0;accidentals.set(t.step,a);return {...t,accidental:a===1?'sharp':a===-1?'flat':prev!==0?'natural':null};};

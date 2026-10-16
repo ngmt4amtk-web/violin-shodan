@@ -110,11 +110,15 @@ test('YIN: 全形の実目標Hzと上下オクターブを44.1/48kHzで取り違
   assert(result.frequency,`${rate} ${string} ${pattern} ${finger} ×${octave}`);assert(Math.abs(centsBetween(result.frequency,hz))<5,`${hz} → ${result.frequency}`);
  }
 });
-test('成功音880/1320Hz・音量/長さと、途中停止後の残響期限',()=>{
- const audio=new AudioEngine(),oscillators=[];
- audio.ctx={currentTime:10,createOscillator(){const o={frequency:{},connect(){},disconnect(){},start(t){this.startAt=t;},stop(t){this.stopAt=t;}};oscillators.push(o);return o;},createGain(){return {gain:{setValueAtTime(){},linearRampToValueAtTime(){}},connect(){},disconnect(){}};}};audio.master={};
- audio.success();assert.deepEqual(oscillators.map(o=>o.frequency.value),[880,1320]);assert(Math.abs(audio.silentUntil-10.69)<1e-9);audio.ctx.currentTime=10.05;audio.stop();assert(Math.abs(audio.silentUntil-10.4)<1e-9);
- audio.correction(442);assert.equal(oscillators.at(-1).frequency.value,442);assert(Math.abs(oscillators.at(-1).stopAt-11.07)<1e-9);assert.equal(AUDIO_CUES.correction.duration,1);
+test('合格音は目標の高さ、正しい音1秒は倍音の多い音で別経路、完了音は控えめ、途中停止後の残響期限',()=>{
+ const audio=new AudioEngine(),oscillators=[],gains=[];
+ audio.ctx={currentTime:10,createOscillator(){const o={frequency:{},connect(){},disconnect(){},setPeriodicWave(w){this.wave=w;},start(t){this.startAt=t;},stop(t){this.stopAt=t;}};oscillators.push(o);return o;},createGain(){const g={peak:0,gain:{setValueAtTime(){},linearRampToValueAtTime(v){g.peak=Math.max(g.peak,v);}},connect(d){g.dest=d;},disconnect(){}};gains.push(g);return g;}};audio.master={};audio.cue={};audio.bright={};
+ audio.success(442);assert.equal(oscillators[0].frequency.value,442);assert.equal(oscillators[0].wave,audio.bright);assert.equal(gains[0].dest,audio.cue);assert.equal(gains[0].peak,AUDIO_CUES.success.volume);assert(Math.abs(oscillators[0].stopAt-10.47)<1e-9);assert(Math.abs(audio.silentUntil-10.8)<1e-9);
+ audio.ctx.currentTime=10.05;audio.stop();assert(Math.abs(audio.silentUntil-10.4)<1e-9);
+ audio.correction(442);assert.equal(oscillators.at(-1).frequency.value,442);assert.equal(oscillators.at(-1).wave,audio.bright);assert.equal(gains.at(-1).dest,audio.cue);assert.equal(gains.at(-1).peak,AUDIO_CUES.correction.volume);assert(Math.abs(oscillators.at(-1).stopAt-11.07)<1e-9);assert.equal(AUDIO_CUES.correction.duration,1);
+ // 以前の正しい音は .9 × 主音量.18 の三角波。少なくとも4倍の振幅にする。
+ assert(AUDIO_CUES.correction.volume>=4*.9*.18);
+ audio.complete();assert.deepEqual(oscillators.slice(-2).map(o=>[o.frequency.value,o.type]),[[660,'sine'],[990,'sine']]);assert(gains.slice(-2).every(g=>g.dest===audio.master&&g.peak===AUDIO_CUES.complete.volume&&g.peak<.65));
 });
 test('実際のメーターは整数表示、別音では音名と修正方向だけ、次の入力で表示を戻す',async()=>{
  const app=appHarness();app.api.enterLesson('fingers');await app.api.startPractice();let time=0;

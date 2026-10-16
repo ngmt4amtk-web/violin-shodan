@@ -33,13 +33,14 @@ export class StablePitchGate{
  }
 }
 // 再生時間・残響・無音を別状態にする。無音は残響が終わってから180ms必要。
-export const AUDIO_CUES={reference:{duration:.8,volume:.65},correction:{duration:1,volume:.9},success:{duration:.34,volume:.35},complete:{duration:.83,volume:.65},tail:.35,silenceMs:180};
+// success・correctionは倍音の多い音で別経路から鳴らす（マイク使用中のスマホでも聞こえる大きさ）。volumeはその経路での最大振幅。
+export const AUDIO_CUES={reference:{duration:.8,volume:.65},correction:{duration:1,volume:.85},success:{duration:.45,volume:.6},complete:{duration:.54,volume:.25},tail:.35,silenceMs:180};
 export class MicJudge{
  constructor(){this.gate=new StablePitchGate();this.reset();}
  reset(){this.state='listening';this.soundEnd=0;this.blockedUntil=0;this.quietSince=null;this.nextNote();}
  nextNote(){this.gate.reset();this.samples=[];this.last=null;}
- block(kind,ms,duration=AUDIO_CUES[kind].duration){this.state=kind;this.soundEnd=ms+duration*1000;this.blockedUntil=this.soundEnd+AUDIO_CUES.tail*1000;this.quietSince=null;this.nextNote();}
- observe(reading,range,ms,level='high'){
+ block(kind,ms,duration=AUDIO_CUES[kind]?.duration??0){this.state=kind;this.soundEnd=ms+duration*1000;this.blockedUntil=this.soundEnd+AUDIO_CUES.tail*1000;this.quietSince=null;this.nextNote();}
+ observe(reading,range,ms,level='high',sounds={}){
   const cfg=MIC_LEVELS[level]||MIC_LEVELS.high,quiet=reading.rms<cfg.minRms;
   if(this.state!=='listening'){
    if(ms<this.soundEnd)return null;
@@ -50,31 +51,32 @@ export class MicJudge{
   }
   if(quiet||!reading.frequency||reading.confidence<cfg.confidence){this.nextNote();return null;}
   if(this.last!==null&&ms-this.last>180)this.nextNote();this.last=ms;
-  if(this.gate.observe(reading,range,ms)){this.block('success',ms);return 'correct';}
+  if(this.gate.observe(reading,range,ms)){this.block('success',ms,sounds.correct===false?0:AUDIO_CUES.success.duration);return 'correct';}
   const cents=centsBetween(reading.frequency,range.targetHz);
   if(cents>=range.lowCents&&cents<=range.highCents){this.samples=[];return null;}
   this.samples.push({ms,cents});while(this.samples.length>1&&this.samples[1].ms<=ms-650)this.samples.shift();
   const values=this.samples.map(x=>x.cents),stable=Math.max(...values)-Math.min(...values)<=12,sameSide=values.every(c=>c<range.lowCents)||values.every(c=>c>range.highCents);
-  if(stable&&sameSide&&ms-this.samples[0].ms>=650){this.block('correction',ms);return 'wrong';}
+  if(stable&&sameSide&&ms-this.samples[0].ms>=650){if(sounds.correction===false){this.samples=[];return null;}this.block('correction',ms);return 'wrong';}
   return null;
  }
 }
 export function transportStart(mode,mic){const counts=!mic&&mode==='continuous'?4:0;return {phase:counts?'countdown':'playing',counts};}
 export class AudioEngine{
  constructor(){this.ctx=null;this.nodes=new Set();this.silentUntil=0;}
- async init(){if(!this.ctx){const A=window.AudioContext||window.webkitAudioContext;if(!A)throw new Error('このブラウザは音の再生に対応していません。SafariまたはChromeで開いてください。');this.ctx=new A();this.master=this.ctx.createGain();this.master.gain.value=.18;this.master.connect(this.ctx.destination);}await this.ctx.resume();return this.ctx;}
+ async init(){if(!this.ctx){const A=window.AudioContext||window.webkitAudioContext;if(!A)throw new Error('このブラウザは音の再生に対応していません。SafariまたはChromeで開いてください。');this.ctx=new A();this.master=this.ctx.createGain();this.master.gain.value=.18;this.master.connect(this.ctx.destination);this.cue=this.ctx.createGain();this.cue.gain.value=1;this.cue.connect(this.ctx.destination);this.bright=this.ctx.createPeriodicWave(new Float32Array(8),new Float32Array([0,1,.7,.45,.3,.2,.12,.08]));}await this.ctx.resume();return this.ctx;}
  get time(){return this.ctx?.currentTime||0;}
  tone(midi,duration=.5,at=this.time,volume=.6){return this.toneHz(frequencyFor(midi),duration,at,volume);}
  toneHz(frequency,duration=.5,at=this.time,volume=.6,wave='triangle'){
   if(!this.ctx)return;
-  const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=wave;o.frequency.value=frequency;
+  const o=this.ctx.createOscillator(),g=this.ctx.createGain(),bright=wave==='bright'&&this.bright;if(bright)o.setPeriodicWave(this.bright);else o.type=wave==='bright'?'sawtooth':wave;o.frequency.value=frequency;
   g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(volume,at+.025);g.gain.setValueAtTime(volume,at+Math.max(.03,duration-.05));g.gain.linearRampToValueAtTime(0,at+duration);
-  o.connect(g);g.connect(this.master);o.start(at);o.stop(at+duration+.02);this.nodes.add(o);o.onended=()=>{this.nodes.delete(o);o.disconnect();g.disconnect();};
+  o.connect(g);g.connect(bright?this.cue:this.master);o.start(at);o.stop(at+duration+.02);this.nodes.add(o);o.onended=()=>{this.nodes.delete(o);o.disconnect();g.disconnect();};
   this.silentUntil=Math.max(this.silentUntil,at+duration+AUDIO_CUES.tail);
  }
  click(at=this.time,accent=false){if(!this.ctx)return;const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.frequency.value=accent?1200:880;o.type='sine';g.gain.setValueAtTime(.35,at);g.gain.exponentialRampToValueAtTime(.001,at+.055);o.connect(g);g.connect(this.master);o.start(at);o.stop(at+.065);this.nodes.add(o);o.onended=()=>{this.nodes.delete(o);o.disconnect();g.disconnect();};}
- success(complete=false){const c=AUDIO_CUES[complete?'complete':'success'];this.toneHz(880,complete ? .25 : .16,this.time,c.volume,'sine');this.toneHz(1320,complete ? .65 : .22,this.time+(complete ? .18 : .12),c.volume,'sine');}
- correction(frequency){this.toneHz(frequency,AUDIO_CUES.correction.duration,this.time,AUDIO_CUES.correction.volume);}
+ success(frequency){this.toneHz(frequency,AUDIO_CUES.success.duration,this.time,AUDIO_CUES.success.volume,'bright');}
+ complete(){const c=AUDIO_CUES.complete;this.toneHz(660,.18,this.time,c.volume,'sine');this.toneHz(990,.4,this.time+.14,c.volume,'sine');}
+ correction(frequency){this.toneHz(frequency,AUDIO_CUES.correction.duration,this.time,AUDIO_CUES.correction.volume,'bright');}
  stop(){const active=this.nodes.size>0;for(const o of this.nodes){try{o.stop();}catch{}}this.nodes.clear();this.silentUntil=active?this.time+AUDIO_CUES.tail:Math.min(this.silentUntil,this.time+AUDIO_CUES.tail);}
  async close(){this.stop();if(this.ctx){await this.ctx.close();this.ctx=null;}}
 }

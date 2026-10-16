@@ -197,8 +197,9 @@ test('成功音・正しい音・お手本・完了音の再生中と残響中�
   for(let t=0;t<(duration+.35)*1000;t+=30)assert.equal(gate.observe(voiced(r.targetHz,offset),r,t),null,kind);
   const end=(duration+.35)*1000;gate.observe(quiet,r,end);gate.observe(quiet,r,end+180);assert.equal(gate.state,'listening');
  }
- const gate=new MicJudge(),r=drillGetRange(81);gate.block('success',0);for(let t=0;t<3000;t+=60)assert.equal(gate.observe(voiced(880),r,t),null);assert.equal(gate.state,'awaitSilence');
- const next=new MicJudge(),r2=drillGetRange(88);next.block('success',0);for(let t=0;t<3000;t+=60)assert.equal(next.observe(voiced(1320),r2,t),null);
+ // 合格音は目標の高さそのもの。鳴り続けても次の判定に回り込まない。
+ const gate=new MicJudge(),r=drillGetRange(81);gate.block('success',0);for(let t=0;t<3000;t+=60)assert.equal(gate.observe(voiced(r.targetHz),r,t),null);assert.equal(gate.state,'awaitSilence');
+ const next=new MicJudge(),r2=drillGetRange(88);next.block('success',0);for(let t=0;t<3000;t+=60)assert.equal(next.observe(voiced(r2.targetHz),r2,t),null);
 });
 test('高さを探る揺れ・低信頼度・無音・中断は誤答にしない、合格は320ms',()=>{
  const r=drillGetRange(69);for(const mode of ['wobble','confidence','silence','gaps']){const g=new MicJudge();for(let t=0;t<5000;t+=60){const reading=mode==='silence'?quiet:mode==='confidence'?{...voiced(r.targetHz,25),confidence:.2}:voiced(r.targetHz,mode==='wobble'?30+20*Math.sin(t/140):25);assert.equal(g.observe(reading,r,mode==='gaps'?t*5:t),null,mode);}}
@@ -312,17 +313,31 @@ test('実際の開始/再開: 1音ずつ・マイクは直ちにplaying、テン
 });
 test('実際のマイク経路: 誤答の参照Hz、同じ音、正答の成功音、次音への回り込み抑止',async()=>{
  const app=appHarness();app.api.enterLesson('fingers');await app.api.startPractice();const target=442;app.api.setReading(voiced(target,20));for(let i=1;i<=13;i++){app.api.setTime(i*.07);app.api.tick();}
- assert.equal(app.api.state().index,0);const sounds=app.api.state().sounds;assert(sounds.some(s=>s[0]===target&&s[1]===1&&s[3]===.9));
+ assert.equal(app.api.state().index,0);const sounds=app.api.state().sounds;assert(sounds.some(s=>s[0]===target&&s[1]===1&&s[3]===AUDIO_CUES.correction.volume&&s[4]==='bright'));
  app.api.setReading(voiced(target));for(let i=14;i<=40;i++){app.api.setTime(i*.07);app.api.tick();}assert.equal(app.api.state().index,0);
  app.api.setReading(quiet);for(let i=41;i<=45;i++){app.api.setTime(i*.07);app.api.tick();}app.api.setReading(voiced(target));for(let i=46;i<=65;i++){app.api.setTime(i*.07);app.api.tick();}
- assert.equal(app.api.state().index,1);assert(sounds.some(s=>s[0]===880));assert(sounds.some(s=>s[0]===1320));app.api.setReading(voiced(880));for(let i=66;i<=100;i++){app.api.setTime(i*.07);app.api.tick();}assert.equal(app.api.state().index,1);
+ assert.equal(app.api.state().index,1);assert(sounds.some(s=>s[0]===target&&s[1]===AUDIO_CUES.success.duration&&s[3]===AUDIO_CUES.success.volume&&s[4]==='bright'));assert(!sounds.some(s=>s[0]===880||s[0]===1320));app.api.setReading(voiced(target));for(let i=66;i<=100;i++){app.api.setTime(i*.07);app.api.tick();}assert.equal(app.api.state().index,1);
+});
+test('設定で合格音・外れたときの正しい音を止める。止めても判定と弓の止め直しは続く',async()=>{
+ assert.equal(normalizeStored({}).preferences.correctTone,true);assert.equal(normalizeStored({}).preferences.correctionTone,true);
+ assert.equal(normalizeStored({preferences:{correctTone:false,correctionTone:'x'}}).preferences.correctTone,false);assert.equal(normalizeStored({preferences:{correctionTone:'x'}}).preferences.correctionTone,true);
+ const range=drillGetRange(69),bad=voiced(range.targetHz,20),gate=new MicJudge(),off={correct:false,correction:false};
+ for(let t=0;t<=3000;t+=60){assert.equal(gate.observe(bad,range,t,'high',off),null);assert.equal(gate.state,'listening');}
+ const ok=new MicJudge();let at;for(let t=0;t<=600;t+=60){if(ok.observe(voiced(range.targetHz),range,t,'high',off)==='correct'){at=t;break;}}assert.equal(at,360);assert.equal(ok.state,'success');
+ assert.equal(ok.observe(voiced(range.targetHz),range,at+1),null);assert.equal(ok.state,'tail');assert.equal(ok.observe(voiced(range.targetHz),range,at+351),null);assert.equal(ok.state,'awaitSilence');
+ const app=appHarness();await app.change({dataset:{pref:'correctionTone'},checked:false});await app.change({dataset:{pref:'correctTone'},checked:false});
+ assert.equal(JSON.parse(app.storage.get('violin-shodan-v1')).preferences.correctionTone,false);app.api.enterLesson('fingers');await app.api.startPractice();
+ const target=442,sounds=app.api.state().sounds;app.api.setReading(voiced(target,20));for(let i=1;i<=60;i++){app.api.setTime(i*.07);app.api.tick();}assert.equal(app.api.state().index,0);assert.equal(sounds.length,0);assert.equal(app.api.state().micState,'listening');
+ app.api.setReading(voiced(target));for(let i=61;i<=80;i++){app.api.setTime(i*.07);app.api.tick();}assert.equal(app.api.state().index,1);assert.equal(sounds.length,0);
+ const settings=appHarness(JSON.stringify({preferences:{correctionTone:false}}));settings.api.navigate('settings');const html=settings.node('#app').innerHTML;
+ assert.match(html,/data-pref="correctTone" checked/);assert.match(html,/data-pref="correctionTone" >/);assert.match(html,/外れたときの正しい音/);
 });
 test('実際の章・子一覧・戻る・設定保存・全音合格時だけ完了音',async()=>{
  const app=appHarness();await app.click({chapter:'1'});assert(!app.node('#app').innerHTML.includes('data-lesson="add2"'));await app.click({action:'addList'});assert(app.node('#app').innerHTML.includes('data-lesson="add2"'));await app.click({action:'chapters'});assert.equal(app.api.state().chapter,1);
  await app.change({id:'difficulty',dataset:{},value:'strict'});await app.change({id:'a4',dataset:{},value:'440'});assert.equal(JSON.parse(app.storage.get('violin-shodan-v1')).preferences.a4,440);
  app.api.enterLesson('open');app.api.setOptions({mic:true,mode:'wait'});await app.api.startPractice();for(let i=0;i<4;i++)app.api.advanceNote();assert.equal(app.api.state().view,'finish');assert.equal(app.api.state().sounds.length,0);
  const all=appHarness();all.api.enterLesson('open');all.api.setOptions({mic:true,mode:'wait'});await all.api.startPractice();let time=0;for(let n=0;n<4;n++){all.api.setReading(quiet);for(let i=0;i<12;i++){time+=.07;all.api.setTime(time);all.api.tick();}all.api.setReading(voiced(442));for(let i=0;i<14;i++){time+=.07;all.api.setTime(time);all.api.tick();}}
- assert.equal(all.api.state().view,'finish');assert(all.api.state().sounds.some(s=>s[0]===1320&&s[1]===.65&&s[3]===.65));
+ assert.equal(all.api.state().view,'finish');assert(all.api.state().sounds.some(s=>s[0]===990&&s[1]===.4&&s[3]===AUDIO_CUES.complete.volume&&s[4]==='sine'));assert(AUDIO_CUES.complete.volume<=.25);
 });
 test('保存済み目標表の照合・Bravura字形と新規モジュールのキャッシュ',async()=>{
  const rows=[];for(const string of Object.keys(STRINGS))for(const pattern of ['23','12','34','34low'])for(let finger=0;finger<=4;finger++){

@@ -345,7 +345,7 @@ test('保存済み目標表の照合・Bravura字形と新規モジュールの�
   const note=makeNote(string,finger,1,{pattern,key:keyForShape(string,pattern)}),r=targetForNote(note);rows.push({string,pattern,finger,name:note.name,key:keyName(note.key),centsFromET:r.targetCents,hz442:r.targetHz});
  }
  const text=JSON.stringify({referenceA:442,context:'melodic',rows},null,2)+'\n';assert.equal(await fs.readFile('validation/intonation-targets.json','utf8'),text);
- const sw=await fs.readFile('dist/sw.js','utf8');assert(sw.includes('violin-shodan-v1-20261016a'));for(const name of ['intonation','settings'])assert(sw.includes(name+'.mjs'));assert(!(await fs.readFile('dist/score.mjs','utf8')).includes('slur'));assert((await fs.readFile('dist/glyphs.mjs','utf8')).includes('Bravura'));
+ const sw=await fs.readFile('dist/sw.js','utf8');assert(sw.includes('violin-shodan-v1-2026101'));for(const name of ['intonation','settings'])assert(sw.includes(name+'.mjs'));assert(!(await fs.readFile('dist/score.mjs','utf8')).includes('slur'));assert((await fs.readFile('dist/glyphs.mjs','utf8')).includes('Bravura'));
  assert((await fs.readFile('DESIGN.md','utf8')).includes('## 2026-10-15 改修'));const readme=await fs.readFile('README.md','utf8');for(const row of rows.filter(r=>r.available!==false))assert(readme.includes(`| ${row.finger} | ${row.name} | ${row.centsFromET>=0?'+':''}${row.centsFromET.toFixed(3)} | ${row.hz442.toFixed(3)} |`));
 });
 test('選択画面の小節数は消したまま、演奏・全譜の小節位置は現在音に追従する',async()=>{

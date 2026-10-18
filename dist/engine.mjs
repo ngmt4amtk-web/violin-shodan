@@ -83,9 +83,10 @@ export class AudioEngine{
 export class Microphone{
  constructor(audio){this.audio=audio;this.stream=null;this.generation=0;}
  async start(){const gen=++this.generation;if(!navigator.mediaDevices?.getUserMedia)throw new Error('マイクはHTTPSのページ、またはこのMacのlocalhostで使えます。');
-  const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:true}});
+  try{if(navigator.audioSession)navigator.audioSession.type='play-and-record';}catch{}
+  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:true}});}catch(e){try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch{}throw e;}
   if(gen!==this.generation){stream.getTracks().forEach(t=>t.stop());return false;}
-  try{if(navigator.audioSession)navigator.audioSession.type='play-and-record';}catch{}this.stream=stream;this.source=this.audio.ctx.createMediaStreamSource(stream);this.analyser=this.audio.ctx.createAnalyser();this.analyser.fftSize=4096;this.source.connect(this.analyser);this.buffer=new Float32Array(4096);this.detector=new PitchDetector(this.audio.ctx.sampleRate);return true;
+  this.stream=stream;this.source=this.audio.ctx.createMediaStreamSource(stream);this.analyser=this.audio.ctx.createAnalyser();this.analyser.fftSize=4096;this.source.connect(this.analyser);this.buffer=new Float32Array(4096);this.detector=new PitchDetector(this.audio.ctx.sampleRate);return true;
  }
  read(level){if(!this.analyser)return {rms:0,frequency:null,confidence:0};this.analyser.getFloatTimeDomainData(this.buffer);return this.detector.detect(this.buffer,level);}
  stop(){this.generation++;try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch{}this.stream?.getTracks().forEach(t=>t.stop());this.source?.disconnect();this.analyser?.disconnect();this.stream=null;this.source=null;this.analyser=null;}

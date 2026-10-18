@@ -63,18 +63,18 @@ export class MicJudge{
 export function transportStart(mode,mic){const counts=!mic&&mode==='continuous'?4:0;return {phase:counts?'countdown':'playing',counts};}
 export class AudioEngine{
  constructor(){this.ctx=null;this.nodes=new Set();this.silentUntil=0;}
- async init(){if(!this.ctx){const A=window.AudioContext||window.webkitAudioContext;if(!A)throw new Error('このブラウザは音の再生に対応していません。SafariまたはChromeで開いてください。');this.ctx=new A();this.master=this.ctx.createGain();this.master.gain.value=.18;this.master.connect(this.ctx.destination);this.cue=this.ctx.createGain();this.cue.gain.value=1;this.cue.connect(this.ctx.destination);this.bright=this.ctx.createPeriodicWave(new Float32Array(8),new Float32Array([0,1,.7,.45,.3,.2,.12,.08]));}await this.ctx.resume();return this.ctx;}
+ async init(){if(!this.ctx){const A=window.AudioContext||window.webkitAudioContext;if(!A)throw new Error('このブラウザは音の再生に対応していません。SafariまたはChromeで開いてください。');try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch{}this.ctx=new A();this.master=this.ctx.createGain();this.master.gain.value=.18;this.master.connect(this.ctx.destination);this.cue=this.ctx.createGain();this.cue.gain.value=1;this.cue.connect(this.ctx.destination);this.bright=this.ctx.createPeriodicWave(new Float32Array(8),new Float32Array([0,1,.7,.45,.3,.2,.12,.08]));}await this.ctx.resume();return this.ctx;}
  get time(){return this.ctx?.currentTime||0;}
  tone(midi,duration=.5,at=this.time,volume=.6){return this.toneHz(frequencyFor(midi),duration,at,volume);}
  toneHz(frequency,duration=.5,at=this.time,volume=.6,wave='triangle'){
   if(!this.ctx)return;
-  const o=this.ctx.createOscillator(),g=this.ctx.createGain(),bright=wave==='bright'&&this.bright;if(bright)o.setPeriodicWave(this.bright);else o.type=wave==='bright'?'sawtooth':wave;o.frequency.value=frequency;
+  const o=this.ctx.createOscillator(),g=this.ctx.createGain(),bright=wave==='bright'&&this.bright,cue=wave==='bright'||wave==='chime';if(bright)o.setPeriodicWave(this.bright);else o.type=wave==='bright'?'sawtooth':wave==='chime'?'sine':wave;o.frequency.value=frequency;
   g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(volume,at+.025);g.gain.setValueAtTime(volume,at+Math.max(.03,duration-.05));g.gain.linearRampToValueAtTime(0,at+duration);
-  o.connect(g);g.connect(bright?this.cue:this.master);o.start(at);o.stop(at+duration+.02);this.nodes.add(o);o.onended=()=>{this.nodes.delete(o);o.disconnect();g.disconnect();};
+  o.connect(g);g.connect(cue?this.cue:this.master);o.start(at);o.stop(at+duration+.02);this.nodes.add(o);o.onended=()=>{this.nodes.delete(o);o.disconnect();g.disconnect();};
   this.silentUntil=Math.max(this.silentUntil,at+duration+AUDIO_CUES.tail);
  }
  click(at=this.time,accent=false){if(!this.ctx)return;const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.frequency.value=accent?1200:880;o.type='sine';g.gain.setValueAtTime(.35,at);g.gain.exponentialRampToValueAtTime(.001,at+.055);o.connect(g);g.connect(this.master);o.start(at);o.stop(at+.065);this.nodes.add(o);o.onended=()=>{this.nodes.delete(o);o.disconnect();g.disconnect();};}
- success(frequency){this.toneHz(frequency,AUDIO_CUES.success.duration,this.time,AUDIO_CUES.success.volume,'bright');}
+ success(){const c=AUDIO_CUES.success,t=this.time;this.toneHz(988,.14,t,c.volume,'chime');this.toneHz(1319,c.duration-.12,t+.12,c.volume,'chime');}
  complete(){const c=AUDIO_CUES.complete;this.toneHz(660,.18,this.time,c.volume,'sine');this.toneHz(990,.4,this.time+.14,c.volume,'sine');}
  correction(frequency){this.toneHz(frequency,AUDIO_CUES.correction.duration,this.time,AUDIO_CUES.correction.volume,'bright');}
  stop(){const active=this.nodes.size>0;for(const o of this.nodes){try{o.stop();}catch{}}this.nodes.clear();this.silentUntil=active?this.time+AUDIO_CUES.tail:Math.min(this.silentUntil,this.time+AUDIO_CUES.tail);}
@@ -85,8 +85,8 @@ export class Microphone{
  async start(){const gen=++this.generation;if(!navigator.mediaDevices?.getUserMedia)throw new Error('マイクはHTTPSのページ、またはこのMacのlocalhostで使えます。');
   const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:true}});
   if(gen!==this.generation){stream.getTracks().forEach(t=>t.stop());return false;}
-  this.stream=stream;this.source=this.audio.ctx.createMediaStreamSource(stream);this.analyser=this.audio.ctx.createAnalyser();this.analyser.fftSize=4096;this.source.connect(this.analyser);this.buffer=new Float32Array(4096);this.detector=new PitchDetector(this.audio.ctx.sampleRate);return true;
+  try{if(navigator.audioSession)navigator.audioSession.type='play-and-record';}catch{}this.stream=stream;this.source=this.audio.ctx.createMediaStreamSource(stream);this.analyser=this.audio.ctx.createAnalyser();this.analyser.fftSize=4096;this.source.connect(this.analyser);this.buffer=new Float32Array(4096);this.detector=new PitchDetector(this.audio.ctx.sampleRate);return true;
  }
  read(level){if(!this.analyser)return {rms:0,frequency:null,confidence:0};this.analyser.getFloatTimeDomainData(this.buffer);return this.detector.detect(this.buffer,level);}
- stop(){this.generation++;this.stream?.getTracks().forEach(t=>t.stop());this.source?.disconnect();this.analyser?.disconnect();this.stream=null;this.source=null;this.analyser=null;}
+ stop(){this.generation++;try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch{}this.stream?.getTracks().forEach(t=>t.stop());this.source?.disconnect();this.analyser?.disconnect();this.stream=null;this.source=null;this.analyser=null;}
 }

@@ -316,7 +316,7 @@ test('実際のマイク経路: 誤答の参照Hz、同じ音、正答の成功�
  assert.equal(app.api.state().index,0);const sounds=app.api.state().sounds;assert(sounds.some(s=>s[0]===target&&s[1]===1&&s[3]===AUDIO_CUES.correction.volume&&s[4]==='bright'));
  app.api.setReading(voiced(target));for(let i=14;i<=40;i++){app.api.setTime(i*.07);app.api.tick();}assert.equal(app.api.state().index,0);
  app.api.setReading(quiet);for(let i=41;i<=45;i++){app.api.setTime(i*.07);app.api.tick();}app.api.setReading(voiced(target));for(let i=46;i<=65;i++){app.api.setTime(i*.07);app.api.tick();}
- assert.equal(app.api.state().index,1);assert(sounds.some(s=>s[0]===target&&s[1]===AUDIO_CUES.success.duration&&s[3]===AUDIO_CUES.success.volume&&s[4]==='bright'));assert(!sounds.some(s=>s[0]===880||s[0]===1320));app.api.setReading(voiced(target));for(let i=66;i<=100;i++){app.api.setTime(i*.07);app.api.tick();}assert.equal(app.api.state().index,1);
+ assert.equal(app.api.state().index,1);assert(sounds.some(s=>s[0]===988&&s[3]===AUDIO_CUES.success.volume&&s[4]==='chime')&&sounds.some(s=>s[0]===1319&&s[4]==='chime'));app.api.setReading(voiced(target));for(let i=66;i<=100;i++){app.api.setTime(i*.07);app.api.tick();}assert.equal(app.api.state().index,1);
 });
 test('設定で合格音・外れたときの正しい音を止める。止めても判定と弓の止め直しは続く',async()=>{
  assert.equal(normalizeStored({}).preferences.correctTone,true);assert.equal(normalizeStored({}).preferences.correctionTone,true);

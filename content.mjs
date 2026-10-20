@@ -1,4 +1,4 @@
-import {READING55,ROWS64,APPLICATION94,EXTRA_SCALES} from './repertoire.mjs';
+import {READING55,ROWS64,APPLICATION94,EXTRA_SCALES,MELODIES} from './repertoire.mjs';
 import {keyForShape,tonalKey} from './intonation.mjs';
 // 教材データ。原譜を視認して転記。追加課題はここへ登録する。
 export const STRINGS = {
@@ -34,6 +34,8 @@ const COMMON_EXERCISES=['fingers','add2','add3','add4','place','pairs','keep','p
 const COMMON_PAGES={fingers:30,add2:34,add3:34,add4:34,place:36,fingers12:80,pairs12:82,keep12:91,fingers34:115};
 const ADD_SUB={add2:'0・1・2を弾き、2と1を往復する',add3:'1・2・3を弾き、3と2を往復する',add4:'2・3・4を弾き、4から1へ下る'};
 function commonLessons(pattern,unit){return COMMON_IDS[pattern].map((id,i)=>{const exercise=COMMON_EXERCISES[i],menu=exercise.startsWith('add')?'add':exercise==='fingers'?'fingers':'variety',item=[...COMMON_MENU,...VARIETY_MENU].find(x=>x[0]===exercise),title=menu==='add'?exercise.slice(-1)+'の指を足す':item[1],sub=menu==='add'?ADD_SUB[exercise]:item[2];return {id,type:id,exercise,menu,unit,pattern,title,sub,page:COMMON_PAGES[id]??null,steps:commonSteps(exercise,pattern)};});}
+const MELODY_STEPS=['1本の弦で弾いた指の形を、隣の弦でもそのまま使います。','G・D、D・A、A・Eから、使う2本を選びます。','弦が替わっても、半音の指はくっつけたままにします。'];
+function melodyLessons(){return MELODIES.map(m=>({id:m.id,type:m.id,menu:'melody',melodyId:m.id,unit:m.form==='23'?1:m.form==='12'?3:4,title:m.title,sub:m.sub,page:null,steps:MELODY_STEPS}));}
 export function commonSteps(exercise,pattern){
  const shape=PATTERNS[pattern],pair=pattern==='34low'?'3と4':pattern.split('').join('と'),gap=f=>shape.intervals[f]-shape.intervals[f-1]===1?'半音':'全音';
  const intro=pattern==='34low'?'A線のラ・シ♭・ド・レ・ミ♭です。開放弦と1も半音です。':pair+'の間は半音、ほかの隣り合う指は全音です。';
@@ -55,9 +57,10 @@ export const LESSONS=[
  {id:'switch3',unit:6,title:'3の指を上げ下げする',sub:'2と3の形と3と4の形',page:null,type:'switch3',steps:['はじめの2小節は2と3、次の2小節は3と4を近づけます。','後半は小節の中で形を替えます。3だけを半音動かします。','1・2・4の場所は同じです。4本の弦から選び、8小節を練習します。']},
  {id:'switch23',unit:6,title:'2と3を一緒に動かす',sub:'1と2の形と3と4の形',page:null,type:'switch23',steps:['はじめの2小節は1と2、次の2小節は3と4を近づけます。','後半は小節の中で形を替え、2と3を一緒に半音動かします。','1と4の場所は同じです。4本の弦から選び、8小節を練習します。']},
  {id:'reading55',unit:7,title:'読んで弾く・19の問題',sub:'選んだ4小節を楽譜から弾く',page:null,type:'reading55',steps:['その1〜19から練習する問題を選びます。','まず30秒ながめ、弦・指・音の長さを確かめます。どれも4小節です。','2と3・1と2・3と4の形を選べます。弦・指番号・リズムはそのまま、選んだ形で音の高さが変わります。指番号4の音は開放弦に替えずに弾きます。']},
- {id:'application94',unit:7,title:'指の順番を自在に',sub:'弦と指の形を選ぶ94番の応用',page:124,type:'application94',steps:['G・D・A・E線と、2と3・1と2・3と4の形を選べます。','①〜⑧から1つの型を選びます。①〜⑧を通すと36小節です。指の順番とリズムは教本のまま、選んだ形で音を作ります。','音符ごとに弓を返します。反復記号は自動反復せず、選んだ範囲を一回弾きます。']}
+ {id:'application94',unit:7,title:'指の順番を自在に',sub:'弦と指の形を選ぶ94番の応用',page:124,type:'application94',steps:['G・D・A・E線と、2と3・1と2・3と4の形を選べます。','①〜⑧から1つの型を選びます。①〜⑧を通すと36小節です。指の順番とリズムは教本のまま、選んだ形で音を作ります。','音符ごとに弓を返します。反復記号は自動反復せず、選んだ範囲を一回弾きます。']},
+ ...melodyLessons()
 ];
-export function chapterItems(unit){const ls=LESSONS.filter(l=>l.unit===unit);if(![1,3,4].includes(unit))return ls;return COMMON_MENU.map(([menu,title,sub])=>menu==='fingers'?ls.find(l=>l.menu===menu):{id:menu+'-'+unit,menu,title,sub,children:ls.filter(l=>l.menu===menu)});}
+export function chapterItems(unit){const ls=LESSONS.filter(l=>l.unit===unit);if(![1,3,4].includes(unit))return ls;const rows=COMMON_MENU.map(([menu,title,sub])=>menu==='fingers'?ls.find(l=>l.menu===menu):{id:menu+'-'+unit,menu,title,sub,children:ls.filter(l=>l.menu===menu)});const songs=ls.filter(l=>l.menu==='melody');if(songs.length)rows.push({id:'melody-'+unit,menu:'melody',title:'旋律で弾く',sub:'隣の弦でも同じ指の形で',children:songs});return rows;}
 export function lessonPage(lesson,opts={}){if(lesson.pattern==='34'&&opts.string==='A'&&opts.variant==='flat')return null;if(lesson.exercise==='keep'&&(opts.row==='random'?opts.resolvedRow:opts.row)==7)return lesson.pattern==='23'?40:null;if(lesson.type==='application94'&&opts.pattern!=='12')return null;return lesson.page;}
 const choose=(value,values,fallback)=>values.includes(String(value))?String(value):fallback;
 export function normalizeOptions(lesson,raw={},bpm=60){
@@ -138,8 +141,14 @@ export function makeExercise(type,opts={},random=Math.random){
    const ascending=[...Array.from({length:4},(_,f)=>makeNote(low,f,2)),bridge,...[1,2,3].map(f=>makeNote(high,f,2))];
    notes=[...ascending,...ascending.slice().reverse()];
  }
+ else if(lesson.melodyId){
+  const m=MELODIES.find(x=>x.id===lesson.melodyId),strings={GD:['G','D'],DA:['D','A'],AE:['A','E']}[opts.pair];
+  notes=m.notes.map(([at,f,b])=>at==null?makeRest(b):makeNote(strings[at],f,b,{pattern:m.form}));
+ }
  if(!notes.length)throw new Error('Unknown exercise: '+type);
- const key=type==='scale'?tonalKey({GD:7,DA:2,AE:9}[opts.scale]):type==='scale12'?tonalKey(opts.scale==='G2'?7:0):type==='scale34'?tonalKey(opts.scale==='E1'?4:9):null;
+ const melody=lesson.melodyId?MELODIES.find(x=>x.id===lesson.melodyId):null,pairStrings=melody?{GD:['G','D'],DA:['D','A'],AE:['A','E']}[opts.pair]:null;
+ const melodyKey=melody?tonalKey(makeNote(pairStrings[melody.tonic[0]],melody.tonic[1],1,{pattern:melody.form}).midi%12):null;
+ const key=melodyKey||(type==='scale'?tonalKey({GD:7,DA:2,AE:9}[opts.scale]):type==='scale12'?tonalKey(opts.scale==='G2'?7:0):type==='scale34'?tonalKey(opts.scale==='E1'?4:9):null);
  return withTimeline(notes.map(x=>x.rest?x:{...x,key:key||keyForShape(x.string,x.pattern)}));
 }
 export function withTimeline(notes){const meter=4;let at=0;return notes.map((n,i)=>{const value={...n,index:i,start:at,end:at+n.beats,bar:Math.floor(at/meter),meter};at+=n.beats;return value;});}

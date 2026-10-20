@@ -1,4 +1,5 @@
 import {STRINGS,LESSONS,PATTERNS,CHAPTERS,CHAPTER_SUB,FORM_LABELS,chapterItems,commonSteps,lessonPage,normalizeOptions,makeExercise,noteTitle,instructionFor} from './content.mjs';
+import {MELODIES} from './repertoire.mjs';
 import {AudioEngine,Microphone,MicJudge,AUDIO_CUES,transportStart,MIC_LEVELS} from './engine.mjs';
 import {DIFFICULTIES,targetForNote,pitchFeedback} from './intonation.mjs';
 import {normalizeStored} from './settings.mjs';
@@ -25,9 +26,9 @@ function shell(body,performance=false){
 }
 function focusHeading(){requestAnimationFrame(()=>{const h=$('h1');if(h){h.tabIndex=-1;h.focus({preventScroll:true});}});}
 function navigate(next){cleanup();view=next;render();window.scrollTo(0,0);focusHeading();}
-function render(){if(view==='home')renderHome();else if(['addList','varietyList'].includes(view))renderSubList(view==='addList'?'add':'variety');else if(view==='intro')renderIntro();else if(view==='settings')renderSettings();else if(view==='setup')renderSetup();}
-function lessonListAction(l=lesson){return l.menu==='add'?'addList':l.menu==='variety'?'varietyList':'chapters';}
-function lessonListLabel(){return lesson.menu==='add'?'指の一覧':lesson.menu==='variety'?'色々な練習':'章の一覧';}
+function render(){if(view==='home')renderHome();else if(['addList','varietyList','melodyList'].includes(view))renderSubList(view==='addList'?'add':view==='varietyList'?'variety':'melody');else if(view==='intro')renderIntro();else if(view==='settings')renderSettings();else if(view==='setup')renderSetup();}
+function lessonListAction(l=lesson){return l.menu==='add'?'addList':l.menu==='variety'?'varietyList':l.menu==='melody'?'melodyList':'chapters';}
+function lessonListLabel(){return lesson.menu==='add'?'指の一覧':lesson.menu==='variety'?'色々な練習':lesson.menu==='melody'?'旋律で弾く':'章の一覧';}
 function lessonHeader(stage){return `<div class="lesson-toolbar"><button class="quiet" data-action="${stage===1?lessonListAction():'intro'}">${icon('back')}${stage===1?lessonListLabel():'やり方'}</button><ol class="stage-nav" aria-label="練習の流れ"><li ${stage===1?'aria-current="step"':''}>1 やり方</li><li ${stage===2?'aria-current="step"':''}>2 選ぶ</li><li>3 弾く</li></ol></div><div class="lesson-heading"><p class="eyebrow">${CHAPTERS[lesson.unit]}${lessonPage(lesson,options)?' · p.'+lessonPage(lesson,options):''}</p><h1>${lesson.title}</h1></div>`;}
 function renderHome(){
  const list=chapter===null?CHAPTERS.map((name,i)=>`<button class="chapter-row" data-chapter="${i}"><span class="index">${String(i+1).padStart(2,'0')}</span><span><strong>${name}</strong><small>${CHAPTER_SUB[i]}</small></span><span class="chevron">›</span></button>`).join(''):chapterItems(chapter).map(l=>`<button class="lesson-row" ${l.children?'data-action="'+lessonListAction(l)+'"':'data-lesson="'+l.id+'"'}><span><strong>${l.title}</strong><small>${l.sub}</small></span><span class="chevron">›</span></button>`).join('');
@@ -48,7 +49,8 @@ function field(label,body){return `<div class="field" role="group" aria-label="$
 function pickRow(another=false){const count=lesson.exercise==='keep'?7:8;options.resolvedRow=another?(Number(options.resolvedRow||1)+Math.floor(Math.random()*(count-1)))%count+1:Math.floor(Math.random()*count)+1;}
 function exerciseControls(){
  const t=lesson.type;let fields='';
- if(t==='open')fields=field('弦',stringChoices(true))+selectOption('rhythm','音符',[['whole','全音符 · 4拍'],['half','2分音符 · 2拍'],['quarter','4分音符 · 1拍'],['eighth','8分音符 · 半拍'],['random','ランダム']]);
+ if(lesson.melodyId){const name=MELODIES.find(m=>m.id===lesson.melodyId)?.key?.[options.pair]||'';fields=field('2本の弦',choices('pair',[['GD','G・D'],['DA','D・A'],['AE','A・E']]))+(name?`<small class="melody-key">${escapeHTML(name)}</small>`:'');}
+ else if(t==='open')fields=field('弦',stringChoices(true))+selectOption('rhythm','音符',[['whole','全音符 · 4拍'],['half','2分音符 · 2拍'],['quarter','4分音符 · 1拍'],['eighth','8分音符 · 半拍'],['random','ランダム']]);
  else if(t==='heights')fields=selectOption('height','弓の高さ',[['all','7段階を往復'],['1','G'],['2','G＋D'],['3','D'],['4','D＋A'],['5','A'],['6','A＋E'],['7','E']]);
  else if(t==='cross')fields=field('2本の弦',choices('pair',[['GD','G・D'],['DA','D・A'],['AE','A・E']]));
  else if(['reading','reading55'].includes(t))fields=selectOption('problem','問題',Array.from({length:t==='reading'?8:19},(_,i)=>[i+1,`その${i+1}`]));
@@ -188,11 +190,11 @@ document.addEventListener('click',async event=>{
  switch(el.dataset.action){
   case 'allChapters':chapter=null;navigate('home');break;
   case 'chapters':navigate('home');break;
-  case 'addList':case 'varietyList':navigate(el.dataset.action);break;
+  case 'addList':case 'varietyList':case 'melodyList':navigate(el.dataset.action);break;
   case 'intro':navigate('intro');break;
   case 'setup':navigate('setup');break;
   case 'settings':settingsReturn=view==='practice'?'setup':view; navigate('settings');break;
-  case 'closeSettings':navigate(['home','addList','varietyList','intro','setup'].includes(settingsReturn)?settingsReturn:'home');break;
+  case 'closeSettings':navigate(['home','addList','varietyList','melodyList','intro','setup'].includes(settingsReturn)?settingsReturn:'home');break;
   case 'start':await startPractice();break;
   case 'startNoMic':options.mic=false;await startPractice();break;
   case 'pause':if(practice?.phase==='paused')await resumePractice();else pausePractice();break;

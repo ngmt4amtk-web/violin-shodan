@@ -1,4 +1,4 @@
-const CACHE='violin-shodan-v1-20261020-melody-1';
+const CACHE='violin-shodan-v1-20261021-melody-2';
 const FILES=['./','./index.html','./style.css','./mic-status.css','./mic-status.mjs','./app.mjs','./content.mjs','./repertoire.mjs','./intonation.mjs','./settings.mjs','./engine.mjs','./score.mjs','./glyphs.mjs','./Bravura-OFL.txt','./assets/pattern-12.svg','./assets/pattern-23.svg','./assets/pattern-34.svg','./assets/icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('violin-shodan-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

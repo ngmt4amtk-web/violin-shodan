@@ -3,6 +3,7 @@ import {AudioEngine,Microphone,MicJudge,AUDIO_CUES,transportStart,MIC_LEVELS} fr
 import {DIFFICULTIES,targetForNote,pitchFeedback} from './intonation.mjs';
 import {normalizeStored} from './settings.mjs';
 import {escapeHTML,renderScore,renderSystems} from './score.mjs';
+import {MicStatusModel,micPanelHTML,paintMicStatus} from './mic-status.mjs';
 import {BRAVURA_LICENSE} from './glyphs.mjs';
 
 const ICONS={home:'<path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/>',book:'<path d="M3 4h7l2 2 2-2h7v16h-7l-2 1-2-1H3zM12 6v15"/>',chart:'<path d="M4 20V10m8 10V4m8 16v-7M2 22h20"/>',settings:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',arrow:'<path d="M4 12h16m-6-6 6 6-6 6"/>',back:'<path d="m14 5-7 7 7 7"/>',play:'<path d="m8 4 12 8-12 8z"/>',pause:'<path d="M8 4v16M16 4v16"/>',sound:'<path d="M3 9h4l5-5v16l-5-5H3zM16 8q5 4 0 8m3-11q8 7 0 14"/>',check:'<path d="m5 12 4 4L20 5"/>',spark:'<path d="m12 2 2.8 7.2L22 12l-7.2 2.8L12 22l-2.8-7.2L2 12l7.2-2.8z"/>',mic:'<rect x="8" y="2" width="8" height="13" rx="4"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/>',close:'<path d="m6 6 12 12M18 6 6 18"/>'};
@@ -14,7 +15,7 @@ function readStored(){try{const value=JSON.parse(localStorage.getItem(KEY)||'{}'
 const stored=normalizeStored(readStored());
 let preferences=stored.preferences;
 let view='home',lesson=null,options={},notes=[],practice=null,raf=0,sessionToken=0,previewTimer=0,toastTimer=0,wakeLock=null;
-const audio=new AudioEngine(),mic=new Microphone(audio),judge=new MicJudge();
+const audio=new AudioEngine(),mic=new Microphone(audio),judge=new MicJudge(),micStatus=new MicStatusModel();
 function save(){try{localStorage.setItem(KEY,JSON.stringify({preferences,lessonId:lesson?.id||stored.lessonId,options:lesson?options:stored.options}));storageAvailable=true;}catch{storageAvailable=false;toast('このブラウザでは設定を保存できません。');}}
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3500);}
 let chapter=null,settingsReturn='home';
@@ -66,8 +67,8 @@ function renderSetup(){
 }
 function renderPractice(){
  const p=practice;
- shell(`<section class="performance-viewport ${options.mic?'with-mic':''}" id="performanceViewport"><header class="practice-top"><button class="icon-button" data-action="exitPractice" aria-label="練習選択へ戻る">${icon('back')}</button><div class="practice-title"><h1>${lesson.title}</h1><p>${options.bpm} BPM · ${isWaiting()?'1音ずつ':'テンポで通す'}</p></div><span id="sessionProgress"></span></header><div class="progress"><span id="sessionBar"></span></div><div class="performance-body"><section class="music-panel" id="currentNote"><div class="playing-head"><span id="phaseLabel">準備中</span><span id="barLabel"></span></div><div class="current-and-next"><div class="now-label"><strong id="noteHeading"></strong><span id="stringLabel"></span></div><div class="next-label"><small>次は</small><strong id="nextNote"></strong><span id="nextHint"></span></div></div><div class="score-stage"><div id="noteScore"></div><div id="countdownArea" class="countdown-area" hidden><span>準備</span><strong id="countNumber">1</strong><span>／ 4</span></div></div><div class="timing-row"><div id="durationCopy" class="duration-copy"></div><div class="beat-track" id="beatTrack">${[1,2,3,4].map(b=>`<span class="beat" data-beat="${b}">${b}</span>`).join('')}</div></div><div class="note-progress"><span id="noteProgress"></span></div></section><section class="guidance-panel"><div id="livePattern"></div><p id="coachText" aria-live="polite"></p>${options.mic?renderMeter():'<p class="listening-label">お手本と、自分の音を聴き比べよう。</p>'}</section></div><footer class="performance-footer"><div class="practice-controls"><button class="secondary" data-action="pause" id="pauseBtn">${icon('pause')}一時停止</button><button class="secondary" data-action="reference" id="referenceBtn">${icon('sound')}お手本</button><button class="primary" data-action="next" id="nextBtn" ${isWaiting()?'':'hidden'}>${options.mic?'手送り':'次の音へ'}${icon('arrow')}</button></div><div class="below-hint"><span>${options.mic?'A='+preferences.a4+' · ±'+DIFFICULTIES[preferences.difficulty]+'¢':'マイクなし・手送りかテンポ'}</span><a href="#fullScore">全体の楽譜 ↓</a></div></footer></section><section class="full-score-section" id="fullScore"><div class="section-line"><h2>楽譜を見ながら</h2><span id="scorePageLabel"></span></div><div id="practiceScore"></div><a class="quiet" href="#performanceViewport">演奏画面へ ↑</a></section>`,true);
- updateNote(true);if(p.phase==='starting'){for(const id of ['pauseBtn','referenceBtn','nextBtn'])$('#'+id).disabled=true;}
+ shell(`<section class="performance-viewport ${options.mic?'with-mic':''}" id="performanceViewport"><header class="practice-top"><button class="icon-button" data-action="exitPractice" aria-label="準備画面へ戻る">${icon('back')}</button><div class="practice-title"><h1>${lesson.title}</h1><p>${options.bpm} BPM（四分音符） · ${isWaiting()?'1音ずつ':'テンポで通す'}</p></div><span id="sessionProgress"></span></header><div class="progress"><span id="sessionBar"></span></div><div class="performance-body"><section class="music-panel" id="currentNote"><div class="playing-head"><span id="phaseLabel">準備中</span><span id="barLabel"></span></div><div class="current-and-next"><div class="now-label"><strong id="noteHeading"></strong><span id="stringLabel"></span></div><div class="next-label"><small>次は</small><strong id="nextNote"></strong><span id="nextHint"></span></div></div><div class="score-stage"><div id="noteScore"></div><div id="countdownArea" class="countdown-area" hidden><span>準備</span><strong id="countNumber">1</strong><span>／ 4</span></div></div><div class="timing-row"><div id="durationCopy" class="duration-copy"></div><div class="beat-track" id="beatTrack">${[1,2,3,4].map(b=>`<span class="beat" data-beat="${b}">${b}</span>`).join('')}</div></div><div class="note-progress"><span id="noteProgress"></span></div></section><section class="guidance-panel"><div id="livePattern"></div><p id="coachText" aria-live="polite"></p>${options.mic?renderMeter():'<p class="listening-label">お手本と、自分の音を聴き比べよう。</p>'}</section></div><footer class="performance-footer"><div class="practice-controls"><button class="secondary" data-action="pause" id="pauseBtn">${icon('pause')}一時停止</button><button class="secondary" data-action="reference" id="referenceBtn">${icon('sound')}お手本</button><button class="primary" data-action="next" id="nextBtn" ${isWaiting()?'':'hidden'}>${options.mic?'手送り':'次の音へ'}${icon('arrow')}</button></div><div class="below-hint"><span>${options.mic?'A='+preferences.a4+' · ±'+DIFFICULTIES[preferences.difficulty]+'¢':'マイクなし・手送りかテンポ'}</span><a href="#fullScore">全体の楽譜 ↓</a></div></footer></section><section class="full-score-section" id="fullScore"><div class="section-line"><h2>楽譜を見ながら</h2><span id="scorePageLabel"></span></div><div id="practiceScore"></div><a class="quiet" href="#performanceViewport">演奏画面へ ↑</a></section>`,true);
+ updateNote(true);paintMic();if(p.phase==='starting'){$('#phaseLabel').textContent=options.mic?'マイクを準備しています':'準備中';for(const id of ['pauseBtn','referenceBtn','nextBtn'])$('#'+id).disabled=true;}
 }
 function finishPractice(){const completed=options.mic&&notes.filter(n=>!n.rest).every(n=>practice.passed.has(n.index));cleanup();if(completed)audio.complete();view='finish';shell(`<section class="finish-page"><div class="finish-mark">${icon('check')}</div><p class="eyebrow">${lesson.title}</p><h1>${completed?'すべての音が合いました。':'最後まで進みました。'}</h1><p>同じ練習を繰り返すか、<br>弦や指の形を変えられます。</p><button class="primary" data-action="repeat">${icon('play')}もう一度弾く</button><button class="secondary" data-action="setup">練習を選ぶ</button><button class="quiet" data-action="${lessonListAction()}">${lessonListLabel()}へ</button></section>`);window.scrollTo(0,0);focusHeading();}
 function settingToggle(key,title,description){return `<label class="toggle-row"><span><strong>${title}</strong><small>${description}</small></span><input type="checkbox" data-pref="${key}" ${preferences[key]?'checked':''}></label>`;}
@@ -78,12 +79,12 @@ function cleanup(){sessionToken++;cancelAnimationFrame(raf);clearInterval(previe
 function isWaiting(){return options.mic||options.mode==='wait';}
 async function startPractice(){
  clearInterval(previewTimer);const token=++sessionToken;audio.stop();mic.stop();view='practice';
- judge.reset();if(options.mic&&audio.silentUntil>audio.time)judge.block('success',audio.time*1000,0);practice={passed:new Set(),phase:'starting',index:0,group:-1,baseTime:0,startIndex:0,queue:[],cue:0,acceptedAt:null,hold:null,lastMicAt:0,feedback:'',count:null};
- preferences.bpm=options.bpm;save();renderPractice();window.scrollTo(0,0);
- try{await audio.init();if(token!==sessionToken)return;if(options.mic){const active=await mic.start();if(!active||token!==sessionToken)return;}if(token!==sessionToken)return;await requestWake();if(token!==sessionToken)return;beginTransport(0);}catch(e){if(token!==sessionToken)return;cleanup();view='setup';renderSetup();$('#startError').innerHTML=`<p class="error">${escapeHTML(e.name==='NotAllowedError'?'マイクの許可が得られませんでした。ブラウザの設定で許可するか、マイクなしで進めてください。':e.message)}</p><button class="secondary" data-action="startNoMic">マイクなしで始める</button>`;$('#startError').scrollIntoView({block:'center'});}
+ judge.reset();micStatus.reset();if(options.mic&&audio.silentUntil>audio.time)judge.block('success',performance.now(),0);practice={passed:new Set(),phase:'starting',index:0,group:-1,baseTime:0,startIndex:0,queue:[],cue:0,acceptedAt:null,hold:null,lastMicAt:-Infinity,lastEnsureAt:-Infinity,recovering:false,recoveryFailed:false,reading:null,pausedReason:null,feedback:'',count:null};
+ preferences.bpm=options.bpm;save();renderPractice();cancelAnimationFrame(raf);raf=requestAnimationFrame(tick);window.scrollTo(0,0);
+ try{await audio.init();if(token!==sessionToken)return;if(options.mic){const active=await mic.start();if(token!==sessionToken)return;if(!active)throw new Error('マイクを開始できませんでした。');}if(token!==sessionToken)return;await requestWake();if(token!==sessionToken)return;beginTransport(0);}catch(e){if(token!==sessionToken)return;cleanup();view='setup';renderSetup();$('#startError').innerHTML=`<p class="error">${escapeHTML(e.name==='NotAllowedError'?'マイクの許可が得られませんでした。ブラウザの設定で許可するか、マイクなしで進めてください。':e.message)}</p><button class="secondary" data-action="startNoMic">マイクなしで始める</button>`;$('#startError').scrollIntoView({block:'center'});}
 }
 function beginTransport(index){
- const p=practice;if(!p)return;const plan=transportStart(options.mode,options.mic);p.phase=plan.phase;p.index=index;p.startIndex=index;p.baseTime=audio.time+(plan.counts ? .12 : 0);p.queue=[];p.cue=0;p.count=null;p.acceptedAt=null;judge.nextNote();
+ const p=practice;if(!p)return;const plan=transportStart(options.mode,options.mic);p.phase=plan.phase;p.pausedReason=null;p.index=index;p.startIndex=index;p.baseTime=audio.time+(plan.counts ? .12 : 0);p.queue=[];p.cue=0;p.count=null;p.acceptedAt=null;judge.nextNote();
  const spb=60/options.bpm;for(let i=0;i<plan.counts;i++)p.queue.push({at:p.baseTime+i*spb,type:'click',accent:i===0});
  p.musicTime=p.baseTime+plan.counts*spb;p.hold=p.musicTime;
  if(!isWaiting()){
@@ -94,7 +95,9 @@ function beginTransport(index){
  p.queue.sort((a,b)=>a.at-b.at);$('#performanceViewport').dataset.phase=p.phase;$('#pauseBtn').disabled=false;$('#referenceBtn').disabled=false;$('#nextBtn').disabled=false;$('#pauseBtn').innerHTML=icon('pause')+'一時停止';$('#nextBtn').hidden=!isWaiting();updateNote(true);cancelAnimationFrame(raf);raf=requestAnimationFrame(tick);
 }
 function tick(){
- const p=practice;if(!p||!['countdown','playing'].includes(p.phase))return;
+ const p=practice;if(!p)return;
+ const nowMs=performance.now();if(options.mic){paintMic(nowMs);if(audio.ctx&&audio.state!=='running'&&nowMs-p.lastEnsureAt>=1000){p.lastEnsureAt=nowMs;void audio.ensureRunning();}}
+ if(!['countdown','playing'].includes(p.phase)||(options.mic&&audio.state!=='running')){if(options.mic)raf=requestAnimationFrame(tick);return;}
  const now=audio.time,spb=60/options.bpm;
  while(p.cue<p.queue.length&&p.queue[p.cue].at<now+.12){const cue=p.queue[p.cue++];if(cue.at<now-.15)continue;if(cue.type==='click')audio.click(Math.max(now,cue.at),cue.accent);else playNote(cue.n,Math.max(now,cue.at),cue.n.beats*spb*.94);}
  if(now<p.musicTime){
@@ -111,7 +114,7 @@ function tick(){
     const n=notes[p.index];if(n.rest){$('#noteProgress').style.width=`${Math.min(1,elapsed/(n.beats*spb))*100}%`;if(elapsed>=n.beats*spb){advanceNote();return;}}
     else if(p.acceptedAt!==null&&now-p.acceptedAt>.5){advanceNote();return;}
    }
-   if(options.mic&&now-p.lastMicAt>.06){p.lastMicAt=now;observeMic(now);}
+   if(options.mic&&nowMs-p.lastMicAt>=60){p.lastMicAt=nowMs;observeMic(nowMs);}
   }
  }
  if(practice===p)raf=requestAnimationFrame(tick);
@@ -128,41 +131,51 @@ function updateNote(force=false){
  $('#sessionProgress').textContent=`${p.index+1} / ${notes.length}`;$('#sessionBar').style.width=`${p.index/notes.length*100}%`;$('#phaseLabel').textContent=n.rest?'音を止めよう':isWaiting()?'この音を、弾いてみよう':'いま弾く音';$('#barLabel').textContent=`${n.bar+1} 小節目`;$('#noteProgress').style.width='0%';
  const group=Math.floor(n.bar/4);if(group!==p.group||force){p.group=group;$('#practiceScore').innerHTML=renderSystems(notes,preferences,3);$('#scorePageLabel').textContent=`全${notes.at(-1).bar+1}小節 · 今 ${n.bar+1}小節目`;}
  document.querySelectorAll('[data-score-index]').forEach(el=>{el.classList.toggle('active',Number(el.dataset.scoreIndex)===p.index);el.classList.toggle('passed',Number(el.dataset.scoreIndex)<p.index);});
- if($('#micFeedback')){$('#micFeedback').textContent=n.rest?'休符では、音を止めよう。':'音を待っています';$('#micFeedback').classList.remove('ok');p.feedback='';}
- if(isWaiting())setBeat(Math.floor(n.start)%4+1);if(options.mic)updateMeter(null,n);
+ if($('#micFeedback')){feedback(options.mic?(n.rest?'休符では音を止めます':''):(n.rest?'休符では、音を止めよう。':'音を待っています'));}
+ if(isWaiting())setBeat(Math.floor(n.start)%4+1);if(options.mic){updateMeter(null,n);paintMic();}
 }
-function renderMeter(){return `<section class="pitch-meter" aria-label="音程"><div class="meter-labels"><span>低い</span><span>正解</span><span>高い</span></div><div class="meter-track" id="pitchMeter" role="meter" aria-label="目標からの音程差" aria-valuemin="-50" aria-valuemax="50" aria-valuenow="0" aria-valuetext="音を待っています"><span id="pitchBand" class="pitch-band"></span><span class="meter-center"></span><span id="pitchNeedle" class="pitch-needle" hidden></span></div><div class="meter-reading"><strong id="pitchDirection">音を待っています</strong><output id="pitchCents">— ¢</output></div><div class="mic-status"><div class="mic-bar" role="meter" aria-label="マイクの音量" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="micLevel"></span></div><p id="micFeedback" role="status">音を待っています</p></div></section>`;}
+function renderMeter(){return micPanelHTML();}
 function updateMeter(reading,n,muted=false){
  const range=targetForNote(n,preferences),meter=$('#pitchMeter');if(!meter)return;
  const low=range?.lowCents??-DIFFICULTIES[preferences.difficulty],high=range?.highCents??DIFFICULTIES[preferences.difficulty];$('#pitchBand').style.left=(50+low)+'%';$('#pitchBand').style.width=(high-low)+'%';meter.dataset.low=low;meter.dataset.high=high;
- const valid=range&&reading?.frequency&&!muted;
+ $('.pitch-meter').dataset.muted=String(muted);const valid=range&&reading?.frequency&&!muted;
  $('#pitchNeedle').hidden=!valid;
- if(!valid){$('#pitchDirection').textContent=muted?'判定停止':n.rest?'休符':'音を待っています';$('#pitchCents').textContent='— ¢';meter.setAttribute('aria-valuetext',$('#pitchDirection').textContent);meter.dataset.direction='';return;}
+ if(!valid){$('#pitchDirection').textContent='';$('#pitchCents').textContent='— ¢';meter.dataset.direction='';feedback(n.rest?'休符では音を止めます':'');return;}
  const value=pitchFeedback(reading.frequency,n,range,preferences.a4);
- $('#pitchNeedle').style.left=(50+value.position)+'%';$('#pitchDirection').textContent=value.centsText?value.direction:'';$('#pitchCents').textContent=value.centsText;meter.setAttribute('aria-valuenow',value.position.toFixed(1));meter.setAttribute('aria-valuetext',value.text+(value.centsText?' '+value.centsText:''));meter.dataset.direction=value.direction;feedback(value.text);return value;
+ $('#pitchNeedle').style.left=(50+value.position)+'%';$('#pitchDirection').textContent=value.centsText?value.direction:'';$('#pitchCents').textContent=value.centsText;meter.setAttribute('aria-valuenow',value.position.toFixed(1));meter.dataset.direction=value.direction;feedback(value.text);return value;
 }
-function observeMic(now){
- const p=practice,n=notes[p.index],r=mic.read(preferences.sensitivity),level=Math.min(100,r.rms*3000);
+function paintMic(nowMs=performance.now()){
+ const p=practice;if(!p||!options.mic)return;const r=p.reading||{rms:0,frequency:null,confidence:0},cfg=MIC_LEVELS[preferences.sensitivity];
+ p.micView=micStatus.update({judgeState:judge.state,cueKind:judge.cueKind,cueDirection:judge.cueDirection,rms:r.rms,soundPresent:r.rms>=cfg.minRms,validPitch:!!r.frequency&&r.rms>=cfg.minRms&&r.confidence>=cfg.confidence,ctxState:audio.ctx?audio.state:'running',micHealth:p.recoveryFailed?'ended':mic.health,phase:p.phase,pausedReason:p.pausedReason,nowMs,cueStartMs:judge.cueStart,cueEndMs:judge.soundEnd});paintMicStatus(document,p.micView);$('#pitchMeter').setAttribute('aria-valuetext',p.micView.title);
+ $('#nextBtn').disabled=p.phase!=='playing';$('#referenceBtn').disabled=p.phase!=='playing'||nowMs<judge.soundEnd;const muted=p.micView.tone!=='live';$('.pitch-meter').dataset.muted=String(muted);if(muted){feedback(notes[p.index]?.rest?'休符では音を止めます':'');$('#pitchNeedle').hidden=true;$('#pitchDirection').textContent='';$('#pitchCents').textContent='— ¢';}
+}
+async function recoverMic(){
+ const p=practice;if(!p||!options.mic)return;await audio.ensureRunning();if(practice!==p||p.recovering||!['playing','countdown'].includes(p.phase))return;
+ if(p.recoveryFailed||['ended','off'].includes(mic.health)||p.micView?.key==='noInput'){p.recovering=true;try{const active=await mic.restart();if(practice===p){if(!active)throw new Error('マイクを開始できませんでした。');p.recoveryFailed=false;p.reading=null;micStatus.reset();judge.nextNote();}}catch(e){if(practice===p){p.recoveryFailed=true;toast(e.message);}}finally{p.recovering=false;}}
+ if(practice===p)paintMic();
+}
+function observeMic(nowMs=performance.now()){
+ const p=practice;if(!p||p.phase!=='playing')return;const n=notes[p.index],r=mic.read(preferences.sensitivity),level=Math.min(100,r.rms*3000);p.reading=r;
  $('#micLevel').style.width=`${level}%`;$('.mic-bar').setAttribute('aria-valuenow',Math.round(level));
- if(n.rest){judge.nextNote();updateMeter(null,n);feedback('休符では音を止めます');return;}
- const before=judge.state,range=targetForNote(n,preferences),result=judge.observe(r,range,now*1000,preferences.sensitivity,{correct:preferences.correctTone,correction:preferences.correctionTone}),muted=judge.state!=='listening';
- $('#performanceViewport').dataset.micState=judge.state;$('#nextBtn').disabled=muted;$('#referenceBtn').disabled=muted;
- if(result==='correct'){updateMeter(r,n);p.passed.add(n.index);p.acceptedAt=now;if(preferences.correctTone)audio.success(range.targetHz);feedback('ちょうど。次の音へ進みます',true);$('#noteProgress').style.width='100%';return;}
- if(result==='wrong'){updateMeter(r,n);audio.correction(range.targetHz);feedback('正しい音を1秒鳴らします');return;}
- if(p.acceptedAt!==null)return;
- updateMeter(r.frequency&&r.confidence>=MIC_LEVELS[preferences.sensitivity].confidence?r:null,n,muted);
- if(muted)feedback(judge.state==='correction'?'正しい音を聴きます':judge.state==='reference'?'お手本を聴きます':judge.state==='awaitSilence'?'弓を止めてから、弾き直します':'音が止まるのを待っています');
- else if(before!=='listening'||!r.frequency)feedback('音を待っています');
+ if(audio.state!=='running'||mic.health!=='live'){paintMic(nowMs);return;}
+ if(n.rest){if(judge.state!=='listening')judge.observe(r,null,nowMs,preferences.sensitivity);judge.nextNote();$('#performanceViewport').dataset.micState=judge.state;updateMeter(null,n);feedback('休符では音を止めます');paintMic(nowMs);return;}
+ const range=targetForNote(n,preferences),result=judge.observe(r,range,nowMs,preferences.sensitivity,{correct:preferences.correctTone,correction:preferences.correctionTone});
+ $('#performanceViewport').dataset.micState=judge.state;$('#nextBtn').disabled=false;$('#referenceBtn').disabled=nowMs<judge.soundEnd;
+ if(result==='correct'){updateMeter(r,n);p.passed.add(n.index);p.acceptedAt=audio.time;if(preferences.correctTone)audio.success();feedback('ちょうど。次の音へ進みます',true);$('#noteProgress').style.width='100%';}
+ else if(result==='wrong'){updateMeter(r,n);audio.correction(range.targetHz);}
+ else{const valid=r.rms>=MIC_LEVELS[preferences.sensitivity].minRms&&r.confidence>=MIC_LEVELS[preferences.sensitivity].confidence;if(p.acceptedAt===null||!r.frequency||!valid)updateMeter(valid?r:null,n,judge.state!=='listening');}
+ paintMic(nowMs);
 }
 function feedback(message,ok=false){if(practice?.feedback===message)return;practice.feedback=message;$('#micFeedback').textContent=message;$('#micFeedback').classList.toggle('ok',ok);}
 function advanceNote(){
  const p=practice;if(!p||p.phase!=='playing'||!isWaiting())return;
+ audio.stop();if(options.mic)judge.cutCue(performance.now());
  if(p.index>=notes.length-1){finishPractice();return;}p.index++;p.hold=audio.time;p.acceptedAt=null;judge.nextNote();updateNote(true);cancelAnimationFrame(raf);raf=requestAnimationFrame(tick);
 }
-function pausePractice(){
- const p=practice;if(!p||p.phase==='paused'||p.phase==='starting')return;p.phase='paused';$('#performanceViewport').dataset.phase='paused';audio.stop();mic.stop();cancelAnimationFrame(raf);judge.nextNote();wakeLock?.release().catch(()=>{});wakeLock=null;$('#countdownArea').hidden=true;$('#noteScore').classList.remove('counting');$('#durationCopy').hidden=false;$('#phaseLabel').textContent='一時停止';$('#coachText').textContent=isWaiting()?'再開すると、すぐ今の音から始めます。':'再開すると、4拍数えて今の音から始めます。';$('#pauseBtn').innerHTML=icon('play')+'再開する';$('#nextBtn').disabled=true;$('#referenceBtn').disabled=true;
+function pausePractice(reason='paused'){
+ const p=practice;if(!p||p.phase==='paused'||p.phase==='starting')return;p.phase='paused';p.pausedReason=reason;$('#performanceViewport').dataset.phase='paused';audio.stop();mic.stop();cancelAnimationFrame(raf);judge.nextNote();wakeLock?.release().catch(()=>{});wakeLock=null;$('#countdownArea').hidden=true;$('#noteScore').classList.remove('counting');$('#durationCopy').hidden=false;$('#phaseLabel').textContent='一時停止';$('#coachText').textContent=isWaiting()?'再開すると、すぐ今の音から始めます。':'再開すると、4拍数えて今の音から始めます。';$('#pauseBtn').innerHTML=icon('play')+'再開する';$('#nextBtn').disabled=true;$('#referenceBtn').disabled=true;paintMic();raf=requestAnimationFrame(tick);
 }
-async function resumePractice(){const p=practice;if(!p||p.phase!=='paused')return;const token=++sessionToken;$('#pauseBtn').disabled=true;try{await audio.init();if(token!==sessionToken)return;if(options.mic){const ok=await mic.start();if(!ok||token!==sessionToken)return;}await requestWake();if(token!==sessionToken)return;beginTransport(p.index);}catch(e){if(token!==sessionToken)return;$('#pauseBtn').disabled=false;toast('再開できませんでした。マイクの許可を確認してください。');}}
+async function resumePractice(){const p=practice;if(!p||p.phase!=='paused')return;const token=++sessionToken;$('#pauseBtn').disabled=true;try{await audio.init();if(token!==sessionToken)return;if(options.mic){const ok=await mic.start();if(token!==sessionToken)return;if(!ok)throw new Error('マイクを開始できませんでした。');}await requestWake();if(token!==sessionToken)return;beginTransport(p.index);}catch(e){if(token!==sessionToken)return;$('#pauseBtn').disabled=false;toast('再開できませんでした。マイクの許可を確認してください。');}}
 function previewCount(){clearInterval(previewTimer);let seconds=30;const update=()=>{const el=$('#previewClock');if(!el){clearInterval(previewTimer);return;}el.textContent=seconds>0?`楽譜を見る時間：あと ${seconds} 秒`:'準備できたら「練習をはじめる」を押そう。';if(seconds<=0)clearInterval(previewTimer);seconds--;};update();previewTimer=setInterval(update,1000);}
 
 function rerenderKeepingFocus(el){const selector=el.dataset.option?`[data-option="${el.dataset.option}"][data-value="${el.dataset.value}"]`:el.dataset.selectOption?`[data-select-option="${el.dataset.selectOption}"]`:el.hasAttribute('data-mic')?'[data-mic]':null;renderSetup();if(selector)$(selector)?.focus({preventScroll:true});}
@@ -184,7 +197,8 @@ document.addEventListener('click',async event=>{
   case 'startNoMic':options.mic=false;await startPractice();break;
   case 'pause':if(practice?.phase==='paused')await resumePractice();else pausePractice();break;
   case 'next':advanceNote();break;
-  case 'reference':if(practice?.phase==='playing'&&!notes[practice.index].rest){if(options.mic)judge.block('reference',audio.time*1000);else judge.nextNote();playNote(notes[practice.index]);if($('#micFeedback'))feedback('お手本を聴いてから、弾いてみよう。');}break;
+  case 'micRecover':await recoverMic();break;
+  case 'reference':if(practice?.phase==='playing'&&!notes[practice.index].rest&&(!options.mic||performance.now()>=judge.soundEnd)){if(options.mic)judge.block('reference',performance.now());else judge.nextNote();playNote(notes[practice.index]);if(options.mic){$('#referenceBtn').disabled=true;paintMic();}}break;
   case 'exitPractice':navigate('setup');break;
   case 'repeat':await startPractice();break;
   case 'previewTimer':previewCount();break;
@@ -204,7 +218,8 @@ document.addEventListener('change',event=>{const el=event.target;
  else if(el.id==='a4'){preferences.a4=Number(el.value);save();}
  else if(el.hasAttribute('data-mic')){options.mic=el.checked;if(options.mic)options.mode='wait';rerenderKeepingFocus(el);}
 });
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&practice&&['playing','countdown'].includes(practice.phase))pausePractice();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&practice&&['playing','countdown'].includes(practice.phase))pausePractice('hidden');else if(!document.hidden&&practice)void audio.ensureRunning();});
+for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>{if(practice)void recoverMic();});
 window.addEventListener('pagehide',cleanup);
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&practice)pausePractice();});
 for(const event of ['online','offline'])window.addEventListener(event,()=>{const el=$('.offline-note');if(el)el.hidden=navigator.onLine;});

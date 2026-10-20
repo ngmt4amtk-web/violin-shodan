@@ -8,10 +8,72 @@ async function record(name,run){await run();results.push(name);console.log('PASS
 async function enter(page,id){await page.goto(BASE);const l=LESSONS.find(l=>l.id===id);await page.locator(`[data-chapter="${l.unit}"]`).click();if(l.menu==='add')await page.locator('[data-action=addList]').click();else if(l.menu==='variety')await page.locator('[data-action=varietyList]').click();await page.locator(`[data-lesson="${id}"]`).click();await page.locator('[data-action="setup"]').click();}
 async function checkBarLabels(page,bar,bars){assert(await page.locator('#currentNote .playing-head>#barLabel').isVisible());assert.equal(await page.locator('#barLabel').textContent(),`${bar} 小節目`);assert(await page.locator('#fullScore .section-line>#scorePageLabel').isVisible());assert.equal(await page.locator('#scorePageLabel').textContent(),`全${bars}小節 · 今 ${bar}小節目`);}
 async function startManual(page){const mic=page.locator('[data-mic]');if(await mic.count())await mic.uncheck();await page.locator('[data-option=mode][data-value=wait]').click();await page.locator('#tempoNumber').fill('180');await page.locator('#tempoNumber').press('Tab');await page.locator('[data-action=start]').click();await page.locator('#performanceViewport[data-phase=playing]').waitFor();assert.equal(await page.locator('#countdownArea').isHidden(),true);await page.locator('#noteScore g.active').waitFor();const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('violin-shodan-v1'))),l=LESSONS.find(l=>l.id===saved.lessonId),ns=makeExercise(l.type,saved.options);await checkBarLabels(page,1,ns.at(-1).bar+1);assert.equal(await page.locator('#fullScore h2').textContent(),'楽譜を見ながら');}
-async function geometry(page){return page.evaluate(()=>{const bounds=s=>document.querySelector(s)?.getBoundingClientRect().toJSON();return {width:innerWidth,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,viewport:bounds('#performanceViewport'),score:bounds('#noteScore'),controls:bounds('.practice-controls'),guide:bounds('.guidance-panel'),footer:bounds('.performance-footer'),body:bounds('.performance-body'),start:bounds('.start-button'),meter:bounds('.pitch-meter'),next:bounds('.next-label'),beat:bounds('#beatTrack'),phase:bounds('#phaseLabel')};});}
+async function geometry(page){return page.evaluate(()=>{const bounds=s=>document.querySelector(s)?.getBoundingClientRect().toJSON();return {width:innerWidth,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,viewport:bounds('#performanceViewport'),score:bounds('#noteScore'),controls:bounds('.practice-controls'),guide:bounds('.guidance-panel'),footer:bounds('.performance-footer'),body:bounds('.performance-body'),start:bounds('.start-button'),meter:bounds('.pitch-meter'),chip:bounds('#micStatus'),next:bounds('.next-label'),beat:bounds('#beatTrack'),phase:bounds('#phaseLabel')};});}
+// MIC_PANEL_CHECKS_BEGIN
+async function microphonePanelChecks(browser){
+ const failures=[],capture=(fn,args)=>{try{return fn(...args);}catch(error){failures.push(error.message);return false;}},check=(...args)=>capture(assert,args);
+ for(const method of ['equal','deepEqual'])check[method]=(...args)=>capture(assert[method],args);
+ const context=await browser.newContext({serviceWorkers:'block'}),p=await context.newPage();
+ try{
+  await p.addInitScript(()=>{const frame=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=fn=>window.micFrame=frame(fn);});
+  for(const [width,height] of [[320,568],[390,844],[699,900],[700,900]])for(const zoom of [1,2]){
+   await p.setViewportSize({width,height});await enter(p,'fingers');
+   await p.evaluate(async()=>{const {Microphone}=await import('./engine.mjs');Microphone.prototype.start=async function(){this.stream={getAudioTracks:()=>[{readyState:'live',muted:false}],getTracks:()=>[{stop(){}}]};return true;};Microphone.prototype.read=()=>({rms:0,frequency:null,confidence:0});});
+   await p.locator('[data-mic]').check();await p.locator('[data-action="start"]').click();await p.locator('#performanceViewport[data-phase="playing"]').waitFor();await p.evaluate(()=>cancelAnimationFrame(window.micFrame));
+   if(zoom===2)await p.addStyleTag({content:':root{font-size:32px!important}'});
+   const appearances={};
+   for(const key of ['starting','listening','hearing','success','correction','reference','resuming','paused','hidden','audioStopped','micEnded','micMuted','noInput']){
+    await p.evaluate(async key=>{const {MIC_VIEW,paintMicStatus}=await import('./mic-status.mjs');paintMicStatus(document,{key,...MIC_VIEW[key],action:MIC_VIEW[key].action||'',progress:['success','correction','reference','resuming'].includes(key)?.5:null});},key);
+    // 背景色の160ms遷移が終わってから測る。4 toneの条件は維持する。
+    await p.waitForTimeout(250);
+    const g=await p.evaluate(()=>{
+     const box=s=>{const e=document.querySelector(s),r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width,height:r.height};};
+     const selectors=['#micStatus','.mic-chip-title','.mic-chip-reason','.mic-chip-action','.pitch-meter','.meter-labels','.meter-reading','#pitchCents','.mic-status','#micFeedback'];
+     return {overflow:document.documentElement.scrollWidth>innerWidth,chip:box('#micStatus'),guide:box('.guidance-panel'),timing:box('.timing-row'),title:box('.mic-chip-title'),reason:box('.mic-chip-reason'),action:box('.mic-chip-action'),titleLine:parseFloat(getComputedStyle(document.querySelector('.mic-chip-title')).lineHeight),reasonLine:parseFloat(getComputedStyle(document.querySelector('.mic-chip-reason')).lineHeight),meter:box('.pitch-meter'),controls:box('.practice-controls'),score:box('#noteScore'),next:box('.next-label'),beat:box('#beatTrack'),phase:box('#phaseLabel'),clipped:selectors.filter(s=>{const e=document.querySelector(s),r=e.getBoundingClientRect();return e.getClientRects().length&&(e.scrollWidth>e.clientWidth+1||e.scrollHeight>e.clientHeight+1||r.left<0||r.right>innerWidth+1);}),buttons:[...document.querySelectorAll('.practice-controls>button')].map(e=>({width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height,font:parseFloat(getComputedStyle(e).fontSize)})),link:box('.below-hint a'),linkFont:parseFloat(getComputedStyle(document.querySelector('.below-hint a')).fontSize),back:document.querySelector('[data-action="exitPractice"]').getAttribute('aria-label')};
+    });
+    const label=`${width}x${height} ${zoom*100}% ${key}`;check(!g.overflow,label+' horizontal overflow');check.deepEqual(g.clipped,[],label+' clipped text');
+    if(zoom===1){for(const name of ['chip','meter','controls','score','next','beat','phase'])check(g[name].top>=0&&g[name].bottom<=height,label+' simultaneous '+name+' '+JSON.stringify(g));check(g.score.height>=80,label+' score height');}
+    check(g.timing.bottom<=g.guide.top+1,label+' timing above guidance');check(g.guide.bottom<=g.controls.top+1,label+' guidance above controls');
+    if(zoom===1&&width<=640){check(g.title.height<=g.titleLine+1,label+' title one line');check(g.reason.height<=g.reasonLine+1,label+' reason one line');if(g.action.height)check(g.action.top<=g.title.bottom&&g.action.bottom>=g.title.top&&g.action.left>=g.title.right-1,label+' action beside title');}
+    check(g.chip.bottom<=g.meter.top+1,label+' chip above meter');check(g.meter.bottom<=g.controls.top+1,label+' meter above controls');
+    // 641px以上・高さ600px以下は44px、それ以外は従来の48pxを保つ。
+    for(const b of g.buttons){check(b.height>=(width>=641&&height<=600?44:48),label+' button height');check.equal(b.font,(width>=700?16:13)*zoom,label+' button font (700px boundary)');check(Math.abs(b.width-g.buttons[0].width)<=1,label+' equal button widths');}
+    check(g.link.width>=44&&g.link.height>=44&&g.linkFont>=11*zoom,label+' full score link');check.equal(g.back,'準備画面へ戻る',label+' back label');
+    const a=await p.locator('#micStatus').evaluate(el=>{const c=getComputedStyle(el),i=getComputedStyle(el.querySelector('.mic-chip-icon'));return {tone:el.dataset.tone,background:c.backgroundColor,border:c.borderStyle,animation:i.animationName};});appearances[a.tone]=a;
+    check(await p.locator('#micStatus button').evaluate(e=>e.hidden||e.getBoundingClientRect().height>=44),label+' recover target');check.equal(await p.locator('#micStatus').getAttribute('aria-live'),'polite');check.equal(await p.locator('.mic-chip-reason').getAttribute('aria-live'),'off');check.equal(await p.locator('#micFeedback').getAttribute('role'),'status');
+   }
+   check.equal(new Set(Object.values(appearances).map(a=>a.background)).size,4,`${width}x${height} ${zoom*100}% four tone backgrounds`);check.equal(appearances.paused.border,'dashed');check.equal(appearances.stopped.border,'solid');check(appearances.live.animation!=='none');
+   await p.evaluate(async()=>{const {MIC_VIEW,paintMicStatus}=await import('./mic-status.mjs');paintMicStatus(document,{key:'listening',...MIC_VIEW.listening,action:'',progress:null});});await p.emulateMedia({reducedMotion:'reduce'});check.equal(await p.locator('.mic-chip-icon').evaluate(e=>getComputedStyle(e).animationName),'none');await p.emulateMedia({reducedMotion:'no-preference'});
+  }
+ }finally{await context.close();}
+ return failures;
+}
+// MIC_PANEL_CHECKS_END
+async function compactFooterChecks(browser){
+ const css=await fs.readFile('dist/style.css','utf8'),context=await browser.newContext({serviceWorkers:'block'}),p=await context.newPage();
+ try{
+  for(const [width,height] of [[641,600],[699,600],[700,600],[844,390],[1024,600],[700,601]])for(const mode of ['manual','mic','continuous']){
+   await p.setViewportSize({width,height});await enter(p,'keep23');
+   const insets=width===844?{top:0,right:59,bottom:21,left:59}:{top:0,right:0,bottom:0,left:0};
+   // 既存safe-area検査と同じくstyle.cssを共有CSSの後へ再挿入する。順序・詳細度の後退も検出する。
+   await p.addStyleTag({content:css.replace(/env\(safe-area-inset-(top|right|bottom|left),0px\)/g,(_,edge)=>insets[edge]+'px')});
+   if(mode==='mic')await p.evaluate(async()=>{const {Microphone}=await import('./engine.mjs');Microphone.prototype.start=async function(){this.stream={getAudioTracks:()=>[{readyState:'live',muted:false}],getTracks:()=>[{stop(){}}]};return true;};Microphone.prototype.read=()=>({rms:0,frequency:null,confidence:0});});
+   await p.locator('[data-mic]').uncheck();await p.locator(`[data-option=mode][data-value=${mode==='continuous'?'continuous':'wait'}]`).click();if(mode==='mic')await p.locator('[data-mic]').check();
+   await p.locator('[data-action=start]').click();await p.locator('#performanceViewport').waitFor();
+   const g=await p.evaluate(()=>{const box=s=>document.querySelector(s).getBoundingClientRect().toJSON();return {footer:box('.performance-footer'),controls:box('.practice-controls'),guide:box('.guidance-panel'),link:box('.below-hint a'),overflow:document.documentElement.scrollWidth>innerWidth,buttons:[...document.querySelectorAll('.practice-controls>button')].filter(e=>e.getClientRects().length).map(e=>({...e.getBoundingClientRect().toJSON(),font:parseFloat(getComputedStyle(e).fontSize)}))};});
+   const compact=width>=641&&height<=600,label=`${width}x${height} ${mode}`;
+   for(const b of g.buttons){assert(b.height>=(compact?44:48),label+' button minimum');assert.equal(b.font,width>=700?16:13,label+' font after style reinsertion');assert(Math.abs(b.width-g.buttons[0].width)<=1,label+' equal widths');if(compact)assert(b.height<=44,label+' compact button 44px');}
+   assert(g.link.width>=44&&g.link.height>=44,label+' link target');assert(!g.overflow,label+' horizontal overflow');
+   if(compact){assert(g.footer.height<=72,label+' footer within former 72px');assert(g.link.left>=g.controls.right,label+' link beside controls');assert(g.link.top<g.controls.bottom&&g.link.bottom>g.controls.top,label+' link shares control row');if(mode!=='mic')assert(g.guide.bottom<=g.controls.top,label+' guidance above controls');}
+  }
+ }finally{await context.close();}
+}
 for(const engine of ['chrome','webkit']){
  const browser=engine==='chrome'?await chromium.launch({channel:'chrome',headless:true}):await webkit.launch({headless:true,executablePath:'/Users/ngmt.mtk/Library/Caches/ms-playwright/webkit-2359/pw_run.sh'});
- const context=await browser.newContext({viewport:{width:390,height:740},deviceScaleFactor:1});const page=await context.newPage();page.on('pageerror',e=>errors.push(`${engine}: ${e.message}`));
+ await record(`${engine}: compact landscape footer, 44px targets and 700px font boundary after style reinsertion`,()=>compactFooterChecks(browser));
+ const micLabel=`${engine}: 共通化 mic panel simultaneous visibility, all states, 200 percent text`,micFailures=await microphonePanelChecks(browser);
+ if(micFailures.length){errors.push(...micFailures.map(error=>micLabel+': '+error));console.log('FAIL',micLabel,micFailures.length+' failures');}else{results.push(micLabel);console.log('PASS',micLabel);}
+  const context=await browser.newContext({viewport:{width:390,height:740},deviceScaleFactor:1});const page=await context.newPage();page.on('pageerror',e=>errors.push(`${engine}: ${e.message}`));
  await record(`${engine}: all ${LESSONS.length} introduction / setup flows and bounded preview`,async()=>{
   for(const l of LESSONS){await enter(page,l.id);assert.equal(await page.locator('h1').textContent(),l.title);assert.equal(await page.locator('.score-preview .section-line>span').count(),0);assert(await page.locator('.compact-score .score-system').count()<=2);assert(await page.locator('[data-role=staff-line]').count()>=5);const g=await geometry(page);assert(!g.overflow,l.id+' overflow');assert(await page.locator('button').evaluateAll(bs=>bs.filter(b=>b.getClientRects().length).every(b=>b.getBoundingClientRect().height>=44)),l.id+' small button');assert(g.start.bottom<=810,l.id+' setup excessive height '+g.start.bottom);}
  });
@@ -100,15 +162,36 @@ for(const engine of ['chrome','webkit']){
  await record(`${engine}: fake microphone meter fits 320×568, sign, range, direction and suppression`,async()=>{
   const fake=await browser.newContext({viewport:{width:320,height:568}}),p=await fake.newPage();p.on('pageerror',e=>errors.push(`${engine} fake mic: ${e.message}`));
   await p.addInitScript(()=>{window.fakePitch=null;window.countdowns=[];new MutationObserver(()=>{const phase=document.querySelector('#performanceViewport')?.dataset.phase;if(phase==='countdown')window.countdowns.push(phase);}).observe(document,{subtree:true,attributes:true,childList:true});});
-  await p.goto(BASE);await p.evaluate(async()=>{const {Microphone}=await import('./engine.mjs');Microphone.prototype.start=async function(){return true;};Microphone.prototype.read=function(){return window.fakePitch?{rms:.02,frequency:window.fakePitch,confidence:.99}:{rms:0,frequency:null,confidence:0};};});
+  await p.goto(BASE);await p.evaluate(async()=>{const {Microphone}=await import('./engine.mjs');Microphone.prototype.start=async function(){this.stream={getAudioTracks:()=>[{readyState:'live',muted:false}],getTracks:()=>[{stop(){}}]};return true;};Microphone.prototype.read=function(){return window.fakePitch?{rms:.02,frequency:window.fakePitch,confidence:.99}:{rms:0,frequency:null,confidence:0};};});
   await p.locator('[data-chapter="1"]').click();await p.locator('[data-lesson=fingers]').click();await p.locator('[data-action=setup]').click();await p.locator('[data-option=mode][data-value=continuous]').click();await p.locator('[data-mic]').check();assert.equal(await p.locator('[data-option=mode][data-value=wait]').getAttribute('aria-pressed'),'true');await p.locator('[data-action=start]').click();await p.locator('#performanceViewport[data-phase=playing]').waitFor();assert.deepEqual(await p.evaluate(()=>window.countdowns),[]);
-  const g=await geometry(p);assert(!g.overflow);for(const k of ['score','controls','meter','next','beat','phase'])assert(g[k].top>=0&&g[k].bottom<=568,JSON.stringify(g));assert(g.meter.bottom<=g.controls.top);assert(g.score.height>=80);
+  const g=await geometry(p);assert(!g.overflow);for(const k of ['score','controls','meter','chip','next','beat','phase'])assert(g[k].top>=0&&g[k].bottom<=568,JSON.stringify(g));assert(g.meter.bottom<=g.controls.top);assert(g.score.height>=80);
   assert.equal(Number(await p.locator('#pitchMeter').getAttribute('data-low')),-8);assert.equal(Number(await p.locator('#pitchMeter').getAttribute('data-high')),8);
   const hz=targetForNote(makeExercise('fingers')[0]).targetHz;await p.evaluate(hz=>window.fakePitch=hz*2**(20/1200),hz);await p.waitForFunction(()=>document.querySelector('#pitchDirection').textContent==='高い');assert.equal(await p.locator('#pitchCents').textContent(),'+20¢');
-  await p.evaluate(()=>window.fakePitch=261.625565*442/440);await p.waitForFunction(()=>document.querySelector('#micFeedback').textContent==='ドに聞こえる・高くして');assert.equal(await p.locator('#pitchCents').textContent(),'');assert.equal(await p.locator('#pitchDirection').textContent(),'');assert.equal(await p.locator('#pitchMeter').getAttribute('aria-valuetext'),'ドに聞こえる・高くして');assert.equal(Number(await p.locator('#pitchMeter').getAttribute('aria-valuenow')),-50);await p.screenshot({path:`validation/${engine}-mic-320.png`});
+  // 状態表示をチップへ集約したため、音程の助言とは別にメーターの読み上げを見出しへ合わせる。
+  await p.evaluate(()=>window.fakePitch=261.625565*442/440);await p.waitForFunction(()=>document.querySelector('#micFeedback').textContent==='ドに聞こえる・高くして');assert.equal(await p.locator('#pitchCents').textContent(),'');assert.equal(await p.locator('#pitchDirection').textContent(),'');assert.equal(await p.locator('#pitchMeter').getAttribute('aria-valuetext'),await p.locator('.mic-chip-title').textContent());assert.equal(Number(await p.locator('#pitchMeter').getAttribute('aria-valuenow')),-50);await p.screenshot({path:`validation/${engine}-mic-320.png`});
   await p.waitForFunction(()=>document.querySelector('#performanceViewport').dataset.micState==='correction');assert((await p.locator('#sessionProgress').textContent()).startsWith('1 /'));await p.waitForFunction(()=>document.querySelector('#performanceViewport').dataset.micState==='awaitSilence');await p.evaluate(()=>window.fakePitch=null);await p.waitForFunction(()=>document.querySelector('#performanceViewport').dataset.micState==='listening');await p.evaluate(hz=>window.fakePitch=hz,hz);await p.waitForFunction(()=>document.querySelector('#pitchDirection').textContent==='ちょうど');assert.equal(await p.locator('#pitchCents').textContent(),'0¢');await p.waitForFunction(()=>document.querySelector('#sessionProgress').textContent.startsWith('2 /'));
   await p.locator('#pauseBtn').click();await p.locator('#pauseBtn').click();await p.locator('#performanceViewport[data-phase=playing]').waitFor();assert.deepEqual(await p.evaluate(()=>window.countdowns),[]);
   await p.addStyleTag({content:':root{font-size:32px!important}'});const enlarged=await geometry(p);assert(!enlarged.overflow);assert(enlarged.meter.bottom<=enlarged.controls.top+1);assert(await p.locator('#livePattern, #livePattern .pattern-diagram.compact, #coachText, .pitch-meter, .meter-labels, .meter-reading, #pitchCents, .mic-status').evaluateAll(es=>es.every(el=>el.getBoundingClientRect().right<=innerWidth)),JSON.stringify(enlarged));await p.screenshot({path:`validation/${engine}-mic-200-percent.png`,fullPage:true});await fake.close();
+ });
+ await record(`${engine}: microphone chip and meter at 320×568 / 390×844, all tones, 200 percent text and reduced motion`,async()=>{
+  const fake=await browser.newContext(),p=await fake.newPage();p.on('pageerror',e=>errors.push(`${engine} mic chip: ${e.message}`));
+  await p.addInitScript(()=>{const frame=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=fn=>window.micFrame=frame(fn);});
+  for(const [width,height] of [[320,568],[390,844]]){
+   await p.setViewportSize({width,height});await enter(p,'fingers');await p.evaluate(async()=>{const {Microphone}=await import('./engine.mjs');Microphone.prototype.start=async function(){this.stream={getAudioTracks:()=>[{readyState:'live',muted:false}],getTracks:()=>[{stop(){}}]};return true;};Microphone.prototype.read=()=>({rms:0,frequency:null,confidence:0});});
+   await p.locator('[data-action=start]').click();await p.locator('#performanceViewport[data-phase=playing]').waitFor();await p.evaluate(()=>cancelAnimationFrame(window.micFrame));
+   const appearances={};
+   for(const key of ['starting','listening','hearing','success','correction','reference','resuming','paused','hidden','audioStopped','micEnded','micMuted','noInput']){
+    await p.evaluate(async key=>{const {MIC_VIEW,paintMicStatus}=await import('./mic-status.mjs');paintMicStatus(document,{key,...MIC_VIEW[key],action:MIC_VIEW[key].action||'',progress:['success','correction','reference','resuming'].includes(key)?.5:null});},key);await p.waitForTimeout(250);
+    const g=await geometry(p);assert(!g.overflow,`${width} ${key}`);for(const name of ['chip','meter','controls','next','beat','phase'])assert(g[name].top>=0&&g[name].bottom<=height,`${width} ${key} ${name}: ${JSON.stringify(g)}`);assert(g.chip.bottom<=g.meter.top+1);assert(g.meter.bottom<=g.controls.top+1);
+    const a=await p.locator('#micStatus').evaluate(el=>{const s=getComputedStyle(el),icon=getComputedStyle(el.querySelector('.mic-chip-icon'));return {tone:el.dataset.tone,background:s.backgroundColor,border:s.borderStyle,animation:icon.animationName};});appearances[a.tone]=a;
+    assert(await p.locator('#micStatus button').evaluate(e=>e.hidden||e.getBoundingClientRect().height>=44));assert.equal(await p.locator('#micStatus').getAttribute('aria-live'),'polite');assert.equal(await p.locator('.mic-chip-reason').getAttribute('aria-live'),'off');
+   }
+   assert.equal(new Set(Object.values(appearances).map(a=>a.background)).size,4,`${width}x${height} four tone backgrounds`);assert.equal(appearances.paused.border,'dashed');assert.equal(appearances.stopped.border,'solid');assert.notEqual(appearances.live.animation,'none');
+   await p.evaluate(async()=>{const {MIC_VIEW,paintMicStatus}=await import('./mic-status.mjs');paintMicStatus(document,{key:'listening',...MIC_VIEW.listening,progress:null});});await p.emulateMedia({reducedMotion:'reduce'});assert.equal(await p.locator('.mic-chip-icon').evaluate(e=>getComputedStyle(e).animationName),'none');await p.emulateMedia({reducedMotion:'no-preference'});
+   await p.addStyleTag({content:':root{font-size:32px!important}'});
+   for(const key of ['listening','correction','audioStopped','micEnded','paused']){await p.evaluate(async key=>{const {MIC_VIEW,paintMicStatus}=await import('./mic-status.mjs');paintMicStatus(document,{key,...MIC_VIEW[key],action:MIC_VIEW[key].action||'',progress:key==='correction'?.5:null});},key);assert(!(await geometry(p)).overflow);assert(await p.locator('#micStatus, .mic-chip-title, .mic-chip-reason, .mic-chip-action, .pitch-meter').evaluateAll(es=>es.filter(e=>e.getClientRects().length).every(e=>e.scrollWidth<=e.clientWidth+1&&e.getBoundingClientRect().right<=innerWidth)));}
+  }
+  await fake.close();
  });
  await record(`${engine}: continuous mode counts four on start and resume`,async()=>{
   await enter(page,'open');await page.locator('[data-option=mode][data-value=continuous]').click();await page.locator('#tempoNumber').fill('180');await page.locator('#tempoNumber').press('Tab');
@@ -130,4 +213,5 @@ for(const engine of ['chrome','webkit']){
  });
  await browser.close();
 }
+if(errors.length)console.error(errors.map((error,i)=>`${i+1}. ${error}`).join('\n'));
 assert.deepEqual(errors,[]);await fs.writeFile('validation/ui-results.json',JSON.stringify({at:new Date().toISOString(),base:BASE,results,errors},null,2));console.log('ALL UI CHECKS PASSED');

@@ -147,3 +147,98 @@ iPhoneで使った結果に合わせ、02「2と3をくっつける」・04「1�
 ## 2026-10-16 音の修正
 
 本人の指示により、マイク使用中に外れたとき鳴らす正しい音を大きくする。主音量0.18倍の三角波（最大振幅約0.16）から、倍音の多い音色・別経路の最大振幅0.85へ。スマホのスピーカーは低い基音を出しにくく、マイク使用中は再生音量も下がりやすいため、音量と倍音の両方で聞こえやすくする。合格時は880/1320Hzの成功音をやめ、その音の目標Hzを0.45秒鳴らす。「合ったときの音」「外れたときの正しい音」は設定で個別に止められる（既定はどちらも鳴る）。止めても判定と、合格後の弓の止め直しは変えない。全音合格時の完了音は「うるさい」との指摘により、880/1320Hz・0.65から660/990Hz・0.25の短い2音へ下げる。お手本の音量は変えていない。
+
+## 2026-10-20 マイクの状態と復帰
+
+この節は初段のマイク判定・表示・復帰を更新する。二段への複写は別契約とし、今回は二段へ書き込まない。合格範囲とMIC_LEVELSの値、音色・音量・再生長、audioSessionの切替は変更しない。
+
+原因Aは無音待ちに上限がなく、AGCや弾き続けで戻れないこと。successは再生終了と残響の後に直ちにlisteningへ戻す。同じ目標音が±1¢で続く場合だけ、合格後の無効入力・無音、または合格時の半分未満のrmsを1回見るまで次の合格を数えない。別の目標はそのまま判定する。
+
+correctionとreferenceは残響後に静かな入力を120ms待つ。静かとはrmsがmax(minRms, block直前の利用者のrms×0.35)未満のこと。待つ上限は700ms。上限で戻ったcorrectionだけを未装填とし、同じ外れ音へ再通知しない。切れ目、またはblock時の音高から30¢以上の移動で再装填する。未装填でも合格は受け付ける。復帰を決めたフレームは320msの判定に含めず、次の入力から数える。
+
+原因Bは無効フレームごとにgateを消していたこと。無音・周波数なし・信頼度不足があっても、最後の有効フレームから180ms以内はgateと誤答候補を保つ。180msを超えた時はnextNoteで消す。音程の許容幅と合格までの320ms、外れ音の安定650msは維持する。
+
+原因CはAudioContextの時刻が停止すると監視も止まること。判定・状態表示・復帰試行の時刻はperformance.now()のmsで渡す。再生の予約は従来のaudio.timeを使う。AudioEngineはonstate、state、ensureRunningを持ち、Microphoneはonhealth、health（off/live/muted/ended）、restartを持つ。古いstreamの通知は無視する。練習中は毎フレーム状態を調べ、音の処理が停止中なら1秒に1回までresumeを試す。pointerdown・keydown・チップの操作でも復帰を試し、切断・入力なしの場合はマイクをつなぎ直す。つなぎ直しに失敗した場合はmicEndedで再試行できる。画面が再び見えた時もresumeを試すが、利用者の一時停止は解かない。
+
+原因Dは停止表示と音程表示を毎フレーム別々に書いていたこと。共有モジュールdist/mic-status.mjsが純粋なMicStatusModel、MIC_VIEW、micPanelHTML、paintMicStatusを提供し、dist/mic-status.cssが見た目を受け持つ。共有部分にはアプリ名を含めない。既存のメーターのidは残し、busy/stopped/paused中はメーターを薄くして針を隠す。マイク使用中の状態表示はチップへ集約し、pitchDirectionとmicFeedbackへ「音を待っています」「判定停止」は出さない。音程を読めない時は方向・助言を空、pitchCentsを「— ¢」にする。micFeedbackは音程の助言と「休符では音を止めます」に使う。pitchMeterのaria-valuetextは常にチップ見出しと同じにする。マイクなしの練習表示は維持する。
+
+| 状態キー | tone | 見出し・理由・操作 |
+| --- | --- | --- |
+| starting | busy | マイクを準備しています |
+| listening | live | 聞いています／弾いてください |
+| hearing | live | 聞いています／音程表示。音はあるが安定したピッチがない時は「音程を聞き取っています」 |
+| success | busy | 合っています／次の音へ進みます |
+| correction | busy | 正しい音を鳴らしています／保存した方向により「音程が低めで落ち着いたためです」か「音程が高めで落ち着いたためです」。方向なしは「音程がずれたまま落ち着いたためです」。鳴り終わると自動で聞き直す |
+| reference | busy | お手本を鳴らしています／鳴り終わると自動で聞き直す |
+| resuming | busy | まもなく聞き直します／スピーカーの音を避けて待つ。弓を止めるとすぐ戻る |
+| paused | paused | 一時停止中／「再開する」で続きから |
+| hidden | paused | 一時停止中／画面を離れたので止めたことと再開方法 |
+| audioStopped | stopped | 音の処理が止まっています／通話・他のアプリ・画面ロックなど。操作「再開する」 |
+| micEnded | stopped | マイクが切れました／操作「マイクをつなぎ直す」 |
+| micMuted | busy | マイクが一時的に使えません／他のアプリの使用の可能性。戻ると自動再開 |
+| noInput | stopped | マイクに音が届いていません／許可や接続を確認。操作「マイクをつなぎ直す」 |
+
+優先順位はaudioStopped、micEnded、micMuted、paused/hidden、starting、再生中、resuming、noInput、hearing/listening。深刻度の上昇とbusyから聞き取りへの復帰は即時、listeningとhearingの行き来は新しい入力状態が400ms続いてから、それ以外は現在の表示を300ms保つ。音声停止・切断・muteの通知は即時に表示する。noInputはlistening中のrmsが1e-5未満で2秒続いた時だけ。再生開始から再生終了・残響・最長待ちまでを1本の残量バーにする。早く復帰した時はバーを消す。
+
+定数はengine.mjsのAUDIO_CUESの隣にRESUME_MAX_MS=700、GAP_MS=180、QUIET_MS=120、NO_INPUT_RMS=1e-5、NO_INPUT_MS=2000を置く。AUDIO_CUES.tailは従来の350ms。cueEndMsは再生終了を指し、モデルがtailと最大待ちを加えて残量を計算する。
+
+MicJudgeはblock時の利用者の周波数と目標HzからcueDirection（low/high、方向なしはnull）を保存し、アプリがMicStatusModelへ渡す。hearingはアプリから渡すsoundPresent（rms>=MIC_LEVELS[感度].minRms）で判断する。NO_INPUT_RMSは接続・入力なしの検知専用とし、感度未満の雑音ではlistening「聞いています／弾いてください」にする。
+
+チップはメーターの上に置く。liveは脈打つ緑の点とマイク、busyは琥珀色と残量、stoppedは赤い枠と操作、pausedは灰色・破線・停止記号で区別する。opacityと背景色の遷移は160ms、動きを減らす設定では脈と遷移を止める。見出しだけをpoliteで読み上げ、理由・操作の更新はlive通知しない。狭い画面と200%文字では理由を折り返す。文字サイズは下げず、指図と助言を同じ行に置いてチップの場所を確保する。操作は44px以上。
+
+手送りは音が鳴っている間も使え、audio.stop()とMicJudge.cutCue(ms)で通常の進行へ入る。cutCueは再生中だけsoundEndを現在時刻へ、blockedUntilを現在時刻+350msへ更新し、quietSinceを消してtailから始める。cueKind・cueDirectionと再装填条件は保持し、すでに再生が終わっていれば何も変更しない。アプリはjudgeの状態・期限を直接書き換えない。お手本の無効期間はsoundEndまでとする。開始中のphaseLabelは「マイクを準備しています」、mic.startがfalseなら「マイクを開始できませんでした。」で開始失敗にする。
+
+キャッシュはviolin-shodan-v1-20261020-mic-10。新しい2ファイルをキャッシュ一覧・index.html・portable生成・代役のモジュール一覧へ加える。verifyとextension-checkで契約の各検査を名前付きで実行し、portableは共有JS/CSSの包含・構文・保存後の再読を検査する。320×568・390×844の状態チップ、全tone、200%文字、動きを減らす設定の画面検査はcheck-uiへ追加し、契約どおり呼び出し側で実行する。実機・実楽器での動作確認とは区別する。
+
+契約(e)の「1.5秒以内」は補正直前の利用者rms=0.02として検査する。この時、雑音rms=0.002は相対閾値0.007未満なので、再生1秒・残響350ms・静か120msの計1470msで戻る。補正直前もrms=0.002なら閾値は0.0007となり、同じ雑音では静かと判定しない。手順1.3の700ms上限を適用し、再生開始から最大2050msで戻ることも同じ検査で確認する。任意の補正前音量に対する1500msの保証は、手順1.3の式とは両立しないため行わない。
+
+## 2026-10-20 二段との演奏画面の共通化
+
+共通化の決定は次のとおり。状態モデルとengineの判定ロジックは今回変更せず、共有パネルの範囲と見た目を揃えた。
+
+1. マイクのチップとメーター全体を初段dist/mic-status.mjsのmicPanelHTML()へ集約し、両renderMeterはこの関数だけを呼ぶ。メーターに関係するCSSは両style.cssから取り除き、初段dist/mic-status.cssへ移した。軸は中央4pxの灰色、合格帯は上下2pxの余白、ちょうどの針と先端は緑、判定しない間はopacity .4、音量バーは24×5px。メーターの色はブランド変数を使わず共有値へ固定した。micFeedbackはrole="status"を持ち、チップの理由はそこへ複写しない。見出しだけをチップのaria-liveで通知する。
+2. テンポ補足を「60 BPM（四分音符） · 1音ずつ」の形式へ揃えた。初段は四分音符固定、二段はtempoUnitによる拍子別の単位を保持する。
+3. 戻るボタンのaria-labelを両方「準備画面へ戻る」へ改めた。
+4. 操作3ボタンは両方gridの等幅3列、最小高48px、文字.8125rem（標準13px、200%時26px）、同じ余白・アイコン寸法とした。320pxで12pxへ下げる初段の上書きもこの値で置き換えた。二段の700px以上で16pxだった操作文字も、契約の「両方13px」を優先して13pxへ揃えた。ほかの文字を縮めて収める対応は行わない。メーターのラベルと音量行は700px以上で既存二段の13pxを保つ。
+5. 「全体の楽譜」は両方44×44px以上、文字.6875rem（標準11px以上）、同じ行高と余白とした。
+6. guidance-panelは幅にかかわらず両方左寄せとした。
+7. 初段の青、二段の紺・紙色は保持した。チップ・メーターは共有CSSの同じ色を使う。
+8. 意図して残した違い：初段の指の図・助言は形を覚える段階のため画面内、二段は読譜を優先して画面外の折りたたみのまま。二段だけの次音の小譜面も移さない。
+
+両アプリの共通化検査は「共通化: 両アプリのメーターはmicPanelHTML由来で同じマークアップ・statusを保つ」「共通化: 両indexのCSS順序と両sw FILESのmic-status 2ファイル」「共通化: 二段distのengine・mic-status JS/CSSは初段と同じバイト列」。初段verify.mjsと二段verify-app.mjsの両方で実行する。二段verify.mjsにも共有2ファイルのバイト照合を追加した。
+
+両check-ui.mjsには「共通化 mic panel simultaneous visibility, all states, 200 percent text」を加えた。同じ関数で320×568・390×844、全13状態、文字100%・200%、チップとメーターの順序・非重複、横はみ出し・縦横の文字切れ、操作の等幅・48px・13px、44pxリンク、読み上げ属性、全tone、動きを減らす設定を検査する。100%では小節・次音・拍・停止・譜面も同時に見えることを要求する。200%では縦に伸ばし、文字切れと要素の重なりを検査する。
+
+ネットワーク禁止のため、追加した画面検査だけをoffline:trueとローカルファイルのroute.fulfillで実行する補助ランナーを/private/tmpに作った。しかしChromeはSIGABRT、WebKitはAbort trap: 6（起動プロセス134）で起動直後に終了し、4通りとも描画検査へ到達しなかった。画面検査は構文確認までで未確認。iPhone実機・マイク・実バイオリンは未確認。
+
+キャッシュ名をviolin-shodan-v1-20261020-mic-11へ更新した。前節のmic-10はこの共通化前の版。
+
+最終実行：初段verify 58 pass / 0 fail・extension-check 32 / 0・portable 7 / 0、すべてexit 0。二段build exit 0、verify-app 4,978 / 0・portable 7 / 0、exit 0。二段verifyは66,126 pass / 15 fail（全66,141項目）でexit 1、失敗はbaseline.jsonの初段5件とwork-baseline.jsonのdeploy10件だけ。engine.mjs・mic-status.mjs・mic-status.cssのcmpは各exit 0。両check-uiの構文はexit 0。追加画面検査の実行は4回ともブラウザ起動で失敗し、描画assertionは0件。ログと最終結果は/private/tmp/mic-contract-20261020/に保管した。
+
+## 2026-10-20 監督の画面検査後の修正
+
+操作3ボタンの文字は700px以上で1rem（標準16px、文字200%で32px）、699px以下で.8125rem（標準13px、文字200%で26px）とする。前節の全幅13pxという決定を訂正する。共通mic-status.cssをstyle.cssの後に読み込むことで両アプリに同じ規則を適用し、画面検査の期待値もこの境界に変更した。「文字を小さくしない」という条件に合わせ、700px以上の元の16pxを保つための変更である。
+
+理由文は最長22字に短くした。correctionは低め・高めと自動再開を保ち、方向不明時は「ずれました」とする。micEndedには再接続できる理由文を足す。状態の優先順位、時間、判定、音程許容幅、MIC_LEVELS、engine.mjsは変更しない。文言の完全一致の期待値も同じ短文へ置き換え、停止原因・再開操作・低めと高めの保持の検査は残す。
+
+640px以下のチップは見出しと操作を1行目、理由を2行目の全幅に配置する。操作ボタンは44px以上を保つ。見出しと理由は最小幅0で折り返し、固定高・省略・行数の切り捨ては使わない。標準文字では見出し1行と理由1行を検査し、文字200%では行数を制限せず全内容を表示する。
+
+同じ共有CSSで、演奏画面と本文のgrid行は内容の必要高を確保し、music-panelの5行は小節・現在音と次音・楽譜・拍・進行線とする。楽譜行だけが最小80pxまで縮み、SVGの固有サイズはscore-stageのsize containmentで必要高に加算しない。演奏画面は最小100svhまたは32remを保ち、内容が増えた時は高さを伸ばして下の面を押し下げる。拍と案内面、案内面と操作の重なりも画面検査で確かめる。
+
+両check-ui.mjsは各状態を描いた後250ms待ち、160msの遷移後に色を測る。toneの背景4色・枠・脈動・reduced-motionの条件は維持する。320×568と390×844に699×900・700×900を加え、文字100%と200%で境界を検査する。初段はマイクパネル内のassert失敗を集め、他の画面検査を従来どおり実行した後に一覧を出す。他の検査の中断動作は変更しない。
+
+共有CSSだけで配置と文字サイズを修正したため、src/style.cssとvalidation/list-baseline.jsonの追加更新はない。baseline.json・validation/work-baseline.json・docs・deployは変更しない。画面検査は監督が実施する。ここではブラウザを起動せず、指定の非ブラウザ検査を実行する。
+
+今回の最終非ブラウザ検査：初段verify 58 pass / 0 fail、extension-check 32 / 0、build-portable 7 / 0（各exit 0）。二段buildはexit 0、verify-app 4,978 / 0、build-portable 7 / 0（各exit 0）。二段verifyは66,126 pass / 15 fail、exit 1で、baseline.json由来の初段保全5件とwork-baseline.json由来のdeploy10件だけが残る。共有engine.mjs・mic-status.mjs・mic-status.cssのcmpは各exit 0。両check-ui.mjsの構文検査も各exit 0。初段の失敗収集はブラウザを使わない代役で104状態すべてを実行し、意図的な708件のassert失敗を全件保持した。最終コマンド・ログは/private/tmp/mic-layout-fix-20261020/に保存した。検査が生成したvalidation結果JSON等はログ側へ複写後、着手前の内容へ戻した。
+
+## 2026-10-20 低い横向き画面のフッター修正
+
+幅641px以上・高さ600px以下では操作ボタンを最小44pxとし、「全体の楽譜」の44pxタップ領域を同じ行の右へ置く。補足は左の2行目に置き、標準文字でフッター72px以下を保つ。それ以外は最小48pxのまま。320×568・390×844のマイクパネルの規則と文言は変更しない。
+
+safe-area検査はstyle.cssを共有CSSの後へ再挿入するため、同じ詳細度だった13px指定が再び勝っていた。共有CSSの操作文字指定に.performance-footerを加え、700px以上は1rem（標準16px、200%時32px）、699px以下は.8125rem（標準13px、200%時26px）を両読込順で優先する。共有CSSだけを変更し、style.cssは今回変更していない。
+
+両check-uiのボタン最小高の期待値を44px/48pxの条件式へ変更した理由をコメントに残した。641×600・699×600・700×600・844×390・1024×600・700×601を、マイクなし手送り・マイクあり・テンポで調べる回帰検査を追加した。style.css再挿入後の文字、等幅、ボタンとリンクの寸法、低画面のフッター72px以下とリンクの横配置、マイクなしの案内面と操作の非重複を確認する。844×390ではright59・bottom21・left59を模擬する。既存safe-area検査の100svh・案内面と操作の非重複条件と、縦向きマイクパネル検査は変更しない。
+
+キャッシュはviolin-shodan-v1-20261020-mic-13、二段はviolin-nidan-20261020-mic-shared-v3。verifyの版期待値もmic-13へ更新し、完全一致条件を維持した。初段verify 58 pass / 0 fail、extension-check 32 / 0、build-portable 7 / 0、二段build、verify-app 4,978 / 0、build-portable 7 / 0は各exit 0。二段verifyは66,126 pass / 15 fail、exit 1で、許容された初段保全5件とdeploy保護10件だけ。詳細な失敗一覧は../violin-nidan-prototype-20261016/DESIGN.mdの同名節に記録した。
+
+共有3ファイルのcmp、両check-uiの構文検査はexit 0。補助のCSS優先順位検査38ケースは通過し、旧CSS再挿入の13px、新CSSでの両読込順の16px/13pxと低画面の44px、320×568・390×844で対象要素の指定値が着手前と同じことを確認した。これは画面の実測ではない。画面検査はあなたが実施する。baseline.json・validation/work-baseline.json・validation/list-baseline.json・docs・deployは今回変更していない。ログは/private/tmp/mic-landscape-fix-20261020/。検査生成物は同所へ保存し、作業ツリー内の検査結果ファイルを着手前の内容に戻した。

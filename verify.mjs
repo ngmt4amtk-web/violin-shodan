@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {LESSONS,STRINGS,makeExercise,makeNote,READING,CHAPTERS,CHAPTER_SUB,COMMON_MENU,VARIETY_MENU,chapterItems,lessonPage,commonSteps,normalizeOptions,PATTERNS} from './dist/content.mjs';
-import {frequencyFor,centsFrom,PitchDetector,StablePitchGate,MicJudge,AudioEngine,AUDIO_CUES,transportStart} from './dist/engine.mjs';
+import {frequencyFor,centsFrom,PitchDetector,StablePitchGate,MicJudge,AudioEngine,MIC_LEVELS,AUDIO_CUES,transportStart} from './dist/engine.mjs';
 import {renderScore,renderSingle,renderSystems} from './dist/score.mjs';
 import {normalizeStored} from './dist/settings.mjs';
 import {ROWS64,APPLICATION94} from './dist/repertoire.mjs';
@@ -181,7 +181,7 @@ test('課題の調が旋律目標を変えないことを全音で照合・正�
  for(let problem=1;problem<=19;problem++)for(const pattern of ['23','12','34'])for(const n of makeExercise('reading55',{problem,pattern}))assert.deepEqual(n.key,keyForShape(n.string,pattern));
 });
 const voiced=(hz,cents=0)=>({frequency:hz*2**(cents/1200),rms:.02,confidence:.99}),quiet={frequency:null,rms:0,confidence:0};
-test('誤答→正しい音1秒→残響350ms→無音180ms→再開。毎回鳴る',()=>{
+test('誤答→正しい音1秒→残響350ms→無音120msか上限700ms→再開。切れ目で再装填',()=>{
  const gate=new MicJudge(),range=drillGetRange(69),bad=voiced(range.targetHz,20);let wrongAt;
  for(let t=0;t<=720;t+=60){const event=gate.observe(bad,range,t);if(event==='wrong'){wrongAt=t;break;}assert.equal(event,null);}assert.equal(wrongAt,660);assert.equal(gate.state,'correction');
  for(let t=720;t<1660;t+=60){assert.equal(gate.observe(voiced(range.targetHz),range,t),null);assert.equal(gate.state,'correction');}
@@ -197,9 +197,10 @@ test('成功音・正しい音・お手本・完了音の再生中と残響中�
   for(let t=0;t<(duration+.35)*1000;t+=30)assert.equal(gate.observe(voiced(r.targetHz,offset),r,t),null,kind);
   const end=(duration+.35)*1000;gate.observe(quiet,r,end);gate.observe(quiet,r,end+180);assert.equal(gate.state,'listening');
  }
- // 合格音は目標の高さそのもの。鳴り続けても次の判定に回り込まない。
- const gate=new MicJudge(),r=drillGetRange(81);gate.block('success',0);for(let t=0;t<3000;t+=60)assert.equal(gate.observe(voiced(r.targetHz),r,t),null);assert.equal(gate.state,'awaitSilence');
- const next=new MicJudge(),r2=drillGetRange(88);next.block('success',0);for(let t=0;t<3000;t+=60)assert.equal(next.observe(voiced(r2.targetHz),r2,t),null);
+ // 契約2: successは無音待ちをせず復帰。同じ目標だけ切れ目を要求し、別目標は判定できる。
+ const gate=new MicJudge(),r=drillGetRange(81);for(const t of [0,80,160,240])assert.equal(gate.observe(voiced(r.targetHz),r,t),null);assert.equal(gate.observe(voiced(r.targetHz),r,320),'correct');
+ for(let t=380;t<3000;t+=60)assert.equal(gate.observe(voiced(r.targetHz),r,t),null);assert.equal(gate.state,'listening');
+ const r2=drillGetRange(88);for(const t of [3020,3100,3180,3260])assert.equal(gate.observe(voiced(r2.targetHz),r2,t),null);assert.equal(gate.observe(voiced(r2.targetHz),r2,3340),'correct');
 });
 test('高さを探る揺れ・低信頼度・無音・中断は誤答にしない、合格は320ms',()=>{
  const r=drillGetRange(69);for(const mode of ['wobble','confidence','silence','gaps']){const g=new MicJudge();for(let t=0;t<5000;t+=60){const reading=mode==='silence'?quiet:mode==='confidence'?{...voiced(r.targetHz,25),confidence:.2}:voiced(r.targetHz,mode==='wobble'?30+20*Math.sin(t/140):25);assert.equal(g.observe(reading,r,mode==='gaps'?t*5:t),null,mode);}}
@@ -324,7 +325,7 @@ test('設定で合格音・外れたときの正しい音を止める。止め�
  const range=drillGetRange(69),bad=voiced(range.targetHz,20),gate=new MicJudge(),off={correct:false,correction:false};
  for(let t=0;t<=3000;t+=60){assert.equal(gate.observe(bad,range,t,'high',off),null);assert.equal(gate.state,'listening');}
  const ok=new MicJudge();let at;for(let t=0;t<=600;t+=60){if(ok.observe(voiced(range.targetHz),range,t,'high',off)==='correct'){at=t;break;}}assert.equal(at,360);assert.equal(ok.state,'success');
- assert.equal(ok.observe(voiced(range.targetHz),range,at+1),null);assert.equal(ok.state,'tail');assert.equal(ok.observe(voiced(range.targetHz),range,at+351),null);assert.equal(ok.state,'awaitSilence');
+ assert.equal(ok.observe(voiced(range.targetHz),range,at+1),null);assert.equal(ok.state,'tail');assert.equal(ok.observe(voiced(range.targetHz),range,at+351),null);assert.equal(ok.state,'listening'); // 契約: 成功音を止めた時もtail後は無音待ちをしない。
  const app=appHarness();await app.change({dataset:{pref:'correctionTone'},checked:false});await app.change({dataset:{pref:'correctTone'},checked:false});
  assert.equal(JSON.parse(app.storage.get('violin-shodan-v1')).preferences.correctionTone,false);app.api.enterLesson('fingers');await app.api.startPractice();
  const target=442,sounds=app.api.state().sounds;app.api.setReading(voiced(target,20));for(let i=1;i<=60;i++){app.api.setTime(i*.07);app.api.tick();}assert.equal(app.api.state().index,0);assert.equal(sounds.length,0);assert.equal(app.api.state().micState,'listening');
@@ -345,7 +346,8 @@ test('保存済み目標表の照合・Bravura字形と新規モジュールの�
   const note=makeNote(string,finger,1,{pattern,key:keyForShape(string,pattern)}),r=targetForNote(note);rows.push({string,pattern,finger,name:note.name,key:keyName(note.key),centsFromET:r.targetCents,hz442:r.targetHz});
  }
  const text=JSON.stringify({referenceA:442,context:'melodic',rows},null,2)+'\n';assert.equal(await fs.readFile('validation/intonation-targets.json','utf8'),text);
- const sw=await fs.readFile('dist/sw.js','utf8');assert(sw.includes('violin-shodan-v1-2026101'));for(const name of ['intonation','settings'])assert(sw.includes(name+'.mjs'));assert(!(await fs.readFile('dist/score.mjs','utf8')).includes('slur'));assert((await fs.readFile('dist/glyphs.mjs','utf8')).includes('Bravura'));
+ // 横向きフッター修正の共有CSSを再取得するキャッシュ版へ更新。完全一致の条件は維持する。
+ const sw=await fs.readFile('dist/sw.js','utf8');assert(sw.includes('violin-shodan-v1-20261020-mic-13'));/* 補正理由・感度・表示集約・cutCueの修正版を取得するためキャッシュ版を更新。 */for(const name of ['intonation','settings','mic-status'])assert(sw.includes(name+'.mjs'));assert(!(await fs.readFile('dist/score.mjs','utf8')).includes('slur'));assert((await fs.readFile('dist/glyphs.mjs','utf8')).includes('Bravura'));
  assert((await fs.readFile('DESIGN.md','utf8')).includes('## 2026-10-15 改修'));const readme=await fs.readFile('README.md','utf8');for(const row of rows.filter(r=>r.available!==false))assert(readme.includes(`| ${row.finger} | ${row.name} | ${row.centsFromET>=0?'+':''}${row.centsFromET.toFixed(3)} | ${row.hz442.toFixed(3)} |`));
 });
 test('選択画面の小節数は消したまま、演奏・全譜の小節位置は現在音に追従する',async()=>{
@@ -385,9 +387,70 @@ test('19問の全形で選択から演奏へ音名・図・楽譜・マイク目
    assert.equal(app.node('#practiceScore').innerHTML,renderSystems(ns,{},3));
    for(const n of ns){
     assert.equal(app.node('#noteHeading').textContent,`${n.string}線・${n.name}`);assert(app.node('#livePattern').innerHTML.includes(`data-pattern="${pattern}"`));assert.equal(app.node('#noteScore').innerHTML,renderScore(ns.filter(x=>x.bar===n.bar),{},Math.floor(n.bar/4)));
-    app.api.setReading(voiced(targetForNote(n).targetHz));app.api.observeMic((n.index+1)*.07);assert.equal(app.node('#pitchCents').textContent,'0¢');assert.equal(app.node('#pitchDirection').textContent,'ちょうど');app.api.advanceNote();
+    app.api.setReading(voiced(targetForNote(n).targetHz));app.api.observeMic((n.index+1)*70);assert.equal(app.node('#pitchCents').textContent,'0¢');assert.equal(app.node('#pitchDirection').textContent,'ちょうど');app.api.advanceNote();
    }
    assert.equal(app.api.state().view,'finish');
   }
  }
+});
+test('アプリ: ctx suspendedでaudioStopped・ensureRunningは1秒に1回、pointerdown/keydownでも復帰',async()=>{
+ const app=appHarness();app.api.enterLesson('fingers');await app.api.startPractice();app.api.setCtxState('suspended');app.api.setNow(10);app.api.tick();assert.equal(app.api.state().micView.key,'audioStopped');assert.equal(app.api.state().ensures,1);assert.equal(app.node('#micStatus').dataset.key,'audioStopped');assert.equal(app.node('#pitchDirection').textContent,'');assert.equal(app.node('#pitchNeedle').hidden,true);
+ app.api.setNow(999);app.api.tick();assert.equal(app.api.state().ensures,1);app.api.setNow(1010);app.api.tick();assert.equal(app.api.state().ensures,2);await app.dispatch('pointerdown');assert.equal(app.api.state().ensures,3);await app.dispatch('keydown',{key:'a'});assert.equal(app.api.state().ensures,4);app.api.setCtxState('running');app.api.setNow(1400);app.api.tick();assert.notEqual(app.api.state().micView.key,'audioStopped');
+});
+test('アプリ: マイクendedでmicEnded・micRecoverでrestart、mute/unmuteは自動表示復帰',async()=>{
+ const app=appHarness();app.api.enterLesson('fingers');await app.api.startPractice();app.api.setHealth('ended');app.api.tick();assert.equal(app.api.state().micView.key,'micEnded');assert.equal(app.node('.mic-chip-action').textContent,'マイクをつなぎ直す');assert.equal(app.node('.mic-chip-action').hidden,false);await app.click({action:'micRecover'});assert.equal(app.api.state().restarts,1);assert.equal(app.api.state().micView.key,'listening');
+ app.api.setHealth('muted');app.api.setNow(1000);app.api.tick();assert.equal(app.api.state().micView.key,'micMuted');app.api.setHealth('live');app.api.setNow(1001);app.api.tick();assert.equal(app.api.state().micView.key,'listening');assert.equal(app.api.state().restarts,1);
+});
+test('アプリ: ctx時刻が凍っても無音2秒でnoInput・micRecoverでマイクをつなぎ直す',async()=>{
+ const app=appHarness();app.api.enterLesson('fingers');await app.api.startPractice();for(const t of [0,1000,1999]){app.api.setNow(t);app.api.tick();assert.notEqual(app.api.state().micView.key,'noInput');}app.api.setNow(2000);app.api.tick();assert.equal(app.api.state().micView.key,'noInput');assert.equal(app.node('#micStatus').dataset.key,'noInput');await app.click({action:'micRecover'});assert.equal(app.api.state().restarts,1);assert.equal(app.api.state().micView.key,'listening');
+});
+test('アプリ: 一時停止pausedと画面離脱hiddenの理由を区別・可視化では一時停止を解かない',async()=>{
+ // 320pxで理由を1行に収める短文化。停止の原因と再開操作の検証は維持する。
+ for(const hidden of [false,true]){const app=appHarness();app.api.enterLesson('fingers');await app.api.startPractice();app.api.setNow(1000);if(hidden)await app.dispatch('visibilitychange',{hidden:true});else app.api.pausePractice();assert.equal(app.api.state().phase,'paused');assert.equal(app.api.state().pausedReason,hidden?'hidden':'paused');assert.equal(app.api.state().micView.key,hidden?'hidden':'paused');assert.equal(app.node('.mic-chip-reason').textContent,hidden?'画面を離れたので停止。「再開する」で続きから':'「再開する」で続きから');app.api.setCtxState('suspended');await app.dispatch('visibilitychange',{hidden:false});assert.equal(app.api.state().ensures,1);assert.equal(app.api.state().phase,'paused');assert.equal(app.api.state().restarts,0);}
+});
+test('アプリ: correction中も次の音へ・再生を止めて進む、お手本はsoundEndまでだけ無効',async()=>{
+ const app=appHarness();app.api.enterLesson('fingers');await app.api.startPractice();app.api.setReading(voiced(442,20));for(let t=0;t<=.72;t+=.06){app.api.setTime(t);app.api.tick();}assert.equal(app.api.state().micState,'correction');assert.equal(app.node('#nextBtn').disabled,false);assert.equal(app.node('#referenceBtn').disabled,true);assert.equal(app.api.state().micView.key,'correction');await app.click({action:'next'});assert.equal(app.api.state().index,1);assert.equal(app.api.state().stops,3);app.api.setNow(800);app.api.tick();assert.equal(app.node('#referenceBtn').disabled,false);
+ const ref=appHarness();ref.api.enterLesson('fingers');await ref.api.startPractice();await ref.click({action:'reference'});assert.equal(ref.node('#referenceBtn').disabled,true);ref.api.setNow(800);ref.api.tick();assert.equal(ref.node('#referenceBtn').disabled,false);assert.equal(ref.node('#nextBtn').disabled,false);
+});
+test('アプリ: 状態をチップへ集約しbusy/stopped中は方向・助言を空、メーター読み上げはチップ見出し',async()=>{
+ const app=appHarness();app.api.enterLesson('fingers');await app.api.startPractice();for(const phase of ['reference','tail','awaitSilence','audioStopped','micEnded','micMuted','noInput']){if(phase==='reference')await app.click({action:'reference'});else if(phase==='audioStopped')app.api.setCtxState('suspended');else if(phase==='micEnded'){app.api.setCtxState('running');app.api.setHealth('ended');}else if(phase==='micMuted')app.api.setHealth('muted');else if(phase==='noInput'){app.api.setHealth('live');app.api.setNow(5000);app.api.tick();}app.api.setNow(phase==='tail'?800:phase==='awaitSilence'?1150:phase==='noInput'?7000:0);app.api.tick();assert.equal(app.node('#pitchDirection').textContent,'');assert.equal(app.node('#pitchCents').textContent,'— ¢');assert.equal(app.node('#micFeedback').textContent,'');assert.equal(app.node('#pitchMeter').attributes['aria-valuetext'],app.node('.mic-chip-title').textContent);assert.equal(app.node('#pitchNeedle').hidden,true);}
+ const source=await fs.readFile('dist/app.mjs','utf8');assert(!source.includes('判定停止'));
+});
+test('アプリ: 開始中の表示とmic.start falseのエラー・再開失敗後も操作できる',async()=>{
+ const app=appHarness();app.api.enterLesson('fingers');app.api.setMicStartResult(false);const pending=app.api.startPractice();assert.equal(app.node('#phaseLabel').textContent,'マイクを準備しています');assert.equal(app.api.state().micView.key,'starting');await pending;assert.equal(app.api.state().view,'setup');assert(app.node('#startError').innerHTML.includes('マイクを開始できませんでした。'));
+ const retry=appHarness();retry.api.enterLesson('fingers');await retry.api.startPractice();retry.api.pausePractice();retry.api.setMicStartResult(false);await retry.api.resumePractice();assert.equal(retry.api.state().phase,'paused');assert.equal(retry.node('#pauseBtn').disabled,false);
+});
+test('アプリ: つなぎ直し失敗はmicEndedで再試行できる',async()=>{
+ const app=appHarness();app.api.enterLesson('fingers');await app.api.startPractice();app.api.setHealth('ended');app.api.tick();app.api.setMicStartResult(false);await app.click({action:'micRecover'});assert.equal(app.api.state().micView.key,'micEnded');assert.equal(app.node('.mic-chip-action').hidden,false);app.api.setMicStartResult(true);await app.click({action:'micRecover'});assert.equal(app.api.state().restarts,2);assert.equal(app.api.state().micView.key,'listening');
+});
+test('アプリ: 補正開始時の低め・高めの理由をチップに渡し、再生中の逆方向入力でも保持',async()=>{
+ for(const [cents,word,other] of [[-20,'低め','高め'],[20,'高め','低め']]){
+  const app=appHarness();app.api.enterLesson('fingers');await app.api.startPractice();app.api.setReading(voiced(442,cents));for(const t of [0,80,160,240,320,400,480,560,640,660]){app.api.setNow(t);app.api.observeMic(t);}assert.equal(app.api.state().micState,'correction');assert.equal(app.node('.mic-chip-reason').textContent,`音程が${word}でした。鳴り終わると自動で再開`);app.api.setReading(voiced(442,-cents));app.api.setNow(720);app.api.observeMic(720);assert(!app.node('.mic-chip-reason').textContent.includes(other));assert.equal(app.node('#pitchMeter').attributes['aria-valuetext'],app.node('.mic-chip-title').textContent);
+ }
+});
+test('アプリ: 感度別minRms未満は聞いています・弾いてください、ピッチなしの音は音程を聞き取っています',async()=>{
+ for(const [sensitivity,{minRms}] of Object.entries(MIC_LEVELS)){
+  const app=appHarness(JSON.stringify({preferences:{sensitivity}}));app.api.enterLesson('fingers');await app.api.startPractice();app.api.setReading({...voiced(442,20),rms:minRms*.99});for(const t of [0,400,2000,10000]){app.api.setNow(t);app.api.observeMic(t);assert.equal(app.api.state().micView.key,'listening');assert.equal(app.node('.mic-chip-title').textContent,'聞いています');assert.equal(app.node('.mic-chip-reason').textContent,'弾いてください');assert.equal(app.node('#pitchDirection').textContent,'');assert.equal(app.node('#pitchCents').textContent,'— ¢');assert.equal(app.node('#micFeedback').textContent,'');}
+  app.api.setReading({rms:minRms,frequency:null,confidence:0});for(const t of [10001,10401]){app.api.setNow(t);app.api.observeMic(t);}assert.equal(app.api.state().micView.key,'hearing');assert.equal(app.node('.mic-chip-reason').textContent,'音程を聞き取っています');assert.equal(app.node('#micFeedback').textContent,'');app.api.setReading(voiced(442,20));app.api.setNow(10402);app.api.observeMic(10402);assert.equal(app.node('#micFeedback').textContent,'高い');app.api.setReading({rms:minRms,frequency:null,confidence:0});app.api.setNow(10403);app.api.observeMic(10403);assert.equal(app.node('#pitchDirection').textContent,'');assert.equal(app.node('#pitchCents').textContent,'— ¢');assert.equal(app.node('#micFeedback').textContent,'');assert.equal(app.node('#pitchMeter').attributes['aria-valuetext'],app.node('.mic-chip-title').textContent);
+ }
+});
+test('アプリ: 休符の助言は残し方向は空、マイクなしの練習表示を保つ',async()=>{
+ const app=appHarness();app.api.enterLesson('cross');app.api.setOptions({mic:true,mode:'wait'});await app.api.startPractice();const rest=makeExercise('cross').findIndex(n=>n.rest);for(let i=0;i<rest;i++)app.api.advanceNote();assert.equal(app.node('#micFeedback').textContent,'休符では音を止めます');app.api.setReading(voiced(442));app.api.setNow(400);app.api.observeMic(400);assert.equal(app.node('#pitchDirection').textContent,'');assert.equal(app.node('#pitchCents').textContent,'— ¢');assert.equal(app.node('#micFeedback').textContent,'休符では音を止めます');assert.equal(app.node('#pitchMeter').attributes['aria-valuetext'],app.node('.mic-chip-title').textContent);
+ const noMic=appHarness();noMic.api.enterLesson('fingers');noMic.api.setOptions({mic:false,mode:'wait'});await noMic.api.startPractice();const html=noMic.node('#app').innerHTML;assert(html.includes('お手本と、自分の音を聴き比べよう。'));assert(html.includes('マイクなし・手送りかテンポ'));assert(!html.includes('id="micStatus"'));assert(!html.includes('id="pitchMeter"'));assert.equal(noMic.node('#micFeedback').textContent,'音を待っています');noMic.api.advanceNote();assert.equal(noMic.node('#micFeedback').textContent,'音を待っています');
+});
+
+const SH=new URL('../violin-shodan/',import.meta.url).pathname,NI=new URL('../violin-nidan-prototype-20261016/',import.meta.url).pathname;
+
+test('共通化: 両アプリのメーターはmicPanelHTML由来で同じマークアップ・statusを保つ',async()=>{
+ const sh=await import(SH+'dist/mic-status.mjs'),ni=await import(NI+'dist/mic-status.mjs');
+ assert.equal(sh.micPanelHTML(),ni.micPanelHTML());assert(sh.micPanelHTML().includes('id="micFeedback" role="status"'));
+ const shHarness=await import(SH+'validation/app-harness.mjs'),niHarness=await import(NI+'validation/app-harness.mjs');
+ for(const harness of [shHarness.appHarness,niHarness.appHarness]){const h=harness();h.api.enterLesson('fingers');h.api.setOptions({mic:true});await h.api.startPractice();const html=h.node('#app').innerHTML;assert.equal(html.split(sh.micPanelHTML()).length,2);}
+ for(const root of [SH,NI]){const app=await fs.readFile(root+'dist/app.mjs','utf8');assert(app.includes('function renderMeter(){return micPanelHTML();}'));}
+});
+test('共通化: 両indexのCSS順序と両sw FILESのmic-status 2ファイル',async()=>{
+ for(const root of [SH,NI]){const html=await fs.readFile(root+'dist/index.html','utf8');assert(html.indexOf('href="./style.css"')<html.indexOf('href="./mic-status.css"'));const sw=await fs.readFile(root+'dist/sw.js','utf8'),files=sw.match(/const FILES=(\[[^;]+\]);/);assert(files);const list=Function('return '+files[1])();for(const name of ['mic-status.mjs','mic-status.css'])assert(list.includes('./'+name));}
+});
+test('共通化: 二段distのengine・mic-status JS/CSSは初段と同じバイト列',async()=>{
+ for(const name of ['engine.mjs','mic-status.mjs','mic-status.css'])assert((await fs.readFile(SH+'dist/'+name)).equals(await fs.readFile(NI+'dist/'+name)),name);
 });

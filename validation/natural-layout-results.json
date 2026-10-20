@@ -1,6 +1,6 @@
 {
   "base": "http://127.0.0.1:8773",
-  "checkedAt": "2026-10-15T23:27:02.439Z",
+  "checkedAt": "2026-10-20T11:28:25.791Z",
   "results": [
     {
       "label": "chrome open 390",
@@ -18898,7 +18898,7 @@
       "width": 390,
       "height": 740,
       "overflow": false,
-      "startBottom": 668.78125,
+      "startBottom": 692.4375,
       "labels": [
         {
           "text": "弦",
@@ -18924,18 +18924,18 @@
       "systems": [
         {
           "width": 358,
-          "height": 102.15625,
-          "staffWidth": 337.70660400390625,
-          "scaleX": 0.8442665289256198,
-          "scaleY": 0.8442665289256198,
+          "height": 113.984375,
+          "staffWidth": 335.3590087890625,
+          "scaleX": 0.9420196280991735,
+          "scaleY": 0.9420196280991735,
           "clipped": []
         },
         {
           "width": 358,
-          "height": 102.15625,
-          "staffWidth": 300.5588684082031,
-          "scaleX": 0.8442665289256198,
-          "scaleY": 0.8442665289256198,
+          "height": 113.984375,
+          "staffWidth": 335.3590087890625,
+          "scaleX": 0.9420196280991735,
+          "scaleY": 0.9420196280991735,
           "clipped": []
         }
       ]
@@ -37836,7 +37836,7 @@
       "width": 390,
       "height": 740,
       "overflow": false,
-      "startBottom": 617.53125,
+      "startBottom": 630.625,
       "labels": [
         {
           "text": "弦",
@@ -37862,18 +37862,18 @@
       "systems": [
         {
           "width": 358,
-          "height": 88.03125,
-          "staffWidth": 340.4844970703125,
-          "scaleX": 0.7275309917355371,
-          "scaleY": 0.7275309917355371,
+          "height": 94.578125,
+          "staffWidth": 339.23065185546875,
+          "scaleX": 0.7816373966942148,
+          "scaleY": 0.7816373966942148,
           "clipped": []
         },
         {
           "width": 358,
-          "height": 88.03125,
-          "staffWidth": 340.4844970703125,
-          "scaleX": 0.7275309917355371,
-          "scaleY": 0.7275309917355371,
+          "height": 94.578125,
+          "staffWidth": 312.65496826171875,
+          "scaleX": 0.7816373966942148,
+          "scaleY": 0.7816373966942148,
           "clipped": []
         }
       ]

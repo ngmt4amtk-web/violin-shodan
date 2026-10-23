@@ -33,8 +33,8 @@ export class StablePitchGate{
  }
 }
 // 再生・残響と復帰待ちを分け、利用者の入力だけで再装填する。
-export const RESUME_MAX_MS=700,GAP_MS=180,QUIET_MS=120,NO_INPUT_RMS=1e-5,NO_INPUT_MS=2000;
-export const AUDIO_CUES={reference:{duration:.8,volume:.65},correction:{duration:1,volume:.85},success:{duration:.45,volume:.6},complete:{duration:.54,volume:.25},tail:.35,silenceMs:QUIET_MS};
+export const RESUME_MAX_MS=400,GAP_MS=180,QUIET_MS=120,NO_INPUT_RMS=1e-5,NO_INPUT_MS=2000;
+export const AUDIO_CUES={reference:{duration:.8,volume:.65},correction:{duration:.6,volume:.85},success:{duration:.3,volume:.6},complete:{duration:.54,volume:.25},tail:.2,silenceMs:QUIET_MS};
 export class MicJudge{
  constructor(){this.gate=new StablePitchGate();this.reset();}
  reset(){this.state='listening';this.cueKind=null;this.cueDirection=null;this.cueStart=0;this.soundEnd=0;this.blockedUntil=0;this.quietSince=null;this.userReading=null;this.targetHz=null;this.repeatGuard=null;this.correctionGuard=null;this.nextNote();}

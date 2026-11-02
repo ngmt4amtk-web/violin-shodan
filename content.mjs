@@ -1,11 +1,20 @@
 import {READING55,ROWS64,APPLICATION94,EXTRA_SCALES,MELODIES} from './repertoire.mjs';
 import {keyForShape,tonalKey} from './intonation.mjs';
+import {IS_VIOLA,STAFF_BASE} from './instrument.mjs';
+import {violaText} from './viola-text.mjs';
 // 教材データ。原譜を視認して転記。追加課題はここへ登録する。
-export const STRINGS = {
- G:{name:'ソ',midi:55,color:'#347ab4',soft:'#e7f0f9',notes:['ソ','ラ','シ','ド','レ'],steps:[-5,-4,-3,-2,-1]},
- D:{name:'レ',midi:62,color:'#c57624',soft:'#fff0dd',notes:['レ','ミ','ファ♯','ソ','ラ'],steps:[-1,0,1,2,3]},
- A:{name:'ラ',midi:69,color:'#c45454',soft:'#fcebea',notes:['ラ','シ','ド♯','レ','ミ'],steps:[3,4,5,6,7]},
- E:{name:'ミ',midi:76,color:'#318260',soft:'#e6f3eb',notes:['ミ','ファ♯','ソ♯','ラ','シ'],steps:[7,8,9,10,11]}
+// 内部の弦名 G・D・A・E は「低い方から1〜4番目の弦」の名前として全課題・保存値で固定する。
+// ビオラはその4本へ C3・G3・D4・A4 を割り当て、5度下で同じ指の形を弾く。label が画面に出す弦名。
+export const STRINGS = IS_VIOLA ? {
+ G:{name:'ド',midi:48,color:'#7a4b2a',soft:'#f3e9e1',notes:['ド','レ','ミ','ファ','ソ'],steps:[-3,-2,-1,0,1],label:'C'},
+ D:{name:'ソ',midi:55,color:'#347ab4',soft:'#e7f0f9',notes:['ソ','ラ','シ','ド','レ'],steps:[1,2,3,4,5],label:'G'},
+ A:{name:'レ',midi:62,color:'#c57624',soft:'#fff0dd',notes:['レ','ミ','ファ♯','ソ','ラ'],steps:[5,6,7,8,9],label:'D'},
+ E:{name:'ラ',midi:69,color:'#c45454',soft:'#fcebea',notes:['ラ','シ','ド♯','レ','ミ'],steps:[9,10,11,12,13],label:'A'}
+} : {
+ G:{name:'ソ',midi:55,color:'#347ab4',soft:'#e7f0f9',notes:['ソ','ラ','シ','ド','レ'],steps:[-5,-4,-3,-2,-1],label:'G'},
+ D:{name:'レ',midi:62,color:'#c57624',soft:'#fff0dd',notes:['レ','ミ','ファ♯','ソ','ラ'],steps:[-1,0,1,2,3],label:'D'},
+ A:{name:'ラ',midi:69,color:'#c45454',soft:'#fcebea',notes:['ラ','シ','ド♯','レ','ミ'],steps:[3,4,5,6,7],label:'A'},
+ E:{name:'ミ',midi:76,color:'#318260',soft:'#e6f3eb',notes:['ミ','ファ♯','ソ♯','ラ','シ'],steps:[7,8,9,10,11],label:'E'}
 };
 export const INTERVALS=[0,2,4,5,7];
 export const PATTERNS={
@@ -20,7 +29,7 @@ export function makeNote(string='A',finger=0,beats=1,extra={}) {
  const {pairFlat,...fields}=extra;
  const pattern=fields.pattern||'23',shape=PATTERNS[pattern];
  if(!shape||(pattern==='34low'&&string!=='A'&&!(pairFlat===true&&string==='E')))throw new Error('Invalid finger pattern');
- const step=s.steps[finger],diatonic=4*7+2+step,letter=(diatonic%7+7)%7;
+ const step=s.steps[finger],diatonic=STAFF_BASE+step,letter=(diatonic%7+7)%7;
  const midi=s.midi+shape.intervals[finger],natural=(Math.floor(diatonic/7)+1)*12+NATURAL[letter],alteration=midi-natural;
  return {string,finger,beats,midi,name:LETTERS[letter]+(alteration===1?'♯':alteration===-1?'♭':''),step,letter,pattern,alteration,...fields};
 }
@@ -39,7 +48,7 @@ const MELODY_STEPS=['1本の弦で弾いた指の形を、隣の弦でもその�
 function melodyLessons(){return MELODIES.map(m=>({id:m.id,type:m.id,menu:'melody',melodyId:m.id,unit:m.form==='23'?1:m.form==='12'?3:4,title:m.title,sub:m.sub,page:null,steps:MELODY_STEPS}));}
 export function commonSteps(exercise,pattern){
  const shape=PATTERNS[pattern],pair=pattern==='34low'?'3と4':pattern.split('').join('と'),gap=f=>shape.intervals[f]-shape.intervals[f-1]===1?'半音':'全音';
- const intro=pattern==='34low'?'A線のラ・シ♭・ド・レ・ミ♭です。開放弦と1も半音です。':pair+'の間は半音、ほかの隣り合う指は全音です。';
+ const intro=pattern==='34low'?violaText('A線のラ・シ♭・ド・レ・ミ♭です。開放弦と1も半音です。'):pair+'の間は半音、ほかの隣り合う指は全音です。';
  const copy={fingers:['0は開放弦、1は人差し指、2は中指、3は薬指、4は小指です。',intro,'0から4へ一つずつ上り、戻ります。音符ごとに弓を返します。'],add2:[`0・1・2から始めます。1と2の間は${gap(2)}です。`,'2と1を行き来し、1へ戻ったとき同じ高さになるか聴きます。',intro],add3:[`1・2・3から始めます。2と3の間は${gap(3)}です。`,'3を上げるときも、2の場所を保ちます。',intro],add4:[`2・3・4から始めます。3と4の間は${gap(4)}です。`,'4を上げたあとも、2と3の場所を保ちます。',intro],place:['最初に1・2・3・4を一つずつ弾き、音を確かめます。','1を弾き、休符で2・3・4をまとめて置きます。4を鳴らし、4・3・2・1と下ります。',intro],pairs:['1・2、1・3、1・4、2・3、2・4、3・4の6組を弾きます。','後半は4・3、4・2、4・1、3・2、3・1、2・1と戻ります。',intro],keep:['①〜⑦から選ぶか、ランダムで1つの型を選びます。①〜⑥は各5小節、⑦は4小節です。',intro,'①〜⑥は4分音符で進み、最後の開放弦を4拍伸ばします。⑦は0・1・2・3、1・2・3・4、0・1・2・1、1・2・3・2と弾きます。'],pivot:['0・1・0・2、0・3・0・4、0・4・0・3、0・2・0・1と4分音符で弾きます。','指を離して開放弦へ戻り、次の指を置きます。最後は開放弦を4拍伸ばします。',intro],triples:['0・1・2・1、1・2・3・2、2・3・4・3と上ります。','4・3・2・3、3・2・1・2、2・1・0・1と下り、最後は開放弦を4拍伸ばします。',intro]};
  return copy[exercise];
 }
@@ -63,7 +72,7 @@ export const LESSONS=[
 ];
 export function chapterItems(unit){const ls=LESSONS.filter(l=>l.unit===unit);if(![1,3,4].includes(unit))return ls;const rows=COMMON_MENU.map(([menu,title,sub])=>menu==='fingers'?ls.find(l=>l.menu===menu):{id:menu+'-'+unit,menu,title,sub,children:ls.filter(l=>l.menu===menu)});const songs=ls.filter(l=>l.menu==='melody');if(songs.length)rows.push({id:'melody-'+unit,menu:'melody',title:'隣の弦でも形を保つ',sub:'2本の弦を行き来して弾く',children:songs});return rows;}
 export function melodyAllowsFlat(m){return m?.form==='34'&&!m.notes?.some(([at,f])=>at!=null&&f===0);}
-export function melodyKeyLabel(melody,opts={}){if(melodyAllowsFlat(melody)&&opts.pair==='AE'&&opts.variant==='flat')return '変ロ長調';return melody?.key?.[opts.pair]||'';}
+export function melodyKeyLabel(melody,opts={}){if(melodyAllowsFlat(melody)&&opts.pair==='AE'&&opts.variant==='flat')return violaText('変ロ長調');return violaText(melody?.key?.[opts.pair]||'');}
 export function lessonPage(lesson,opts={}){if(lesson.pattern==='34'&&opts.string==='A'&&opts.variant==='flat')return null;if(lesson.exercise==='keep'&&(opts.row==='random'?opts.resolvedRow:opts.row)==7)return lesson.pattern==='23'?40:null;if(lesson.type==='application94'&&opts.pattern!=='12')return null;return lesson.page;}
 const choose=(value,values,fallback)=>values.includes(String(value))?String(value):fallback;
 export function normalizeOptions(lesson,raw={},bpm=60){
@@ -153,11 +162,12 @@ export function makeExercise(type,opts={},random=Math.random){
  const melody=lesson.melodyId?MELODIES.find(x=>x.id===lesson.melodyId):null,pairStrings=melody?{GD:['G','D'],DA:['D','A'],AE:['A','E']}[opts.pair]:null;
  const flatPair=melodyAllowsFlat(melody)&&opts.pair==='AE'&&opts.variant==='flat';
  const melodyKey=melody?(flatPair?keyForShape('A','34low'):tonalKey(makeNote(pairStrings[melody.tonic[0]],melody.tonic[1],1,{pattern:melody.form}).midi%12)):null;
- const key=melodyKey||(type==='scale'?tonalKey({GD:7,DA:2,AE:9}[opts.scale]):type==='scale12'?tonalKey(opts.scale==='G2'?7:0):type==='scale34'?tonalKey(opts.scale==='E1'?4:9):null);
+ const pc=type==='scale'?{GD:7,DA:2,AE:9}[opts.scale]:type==='scale12'?(opts.scale==='G2'?7:0):type==='scale34'?(opts.scale==='E1'?4:9):null;
+ const key=melodyKey||(pc===null?null:tonalKey(IS_VIOLA?(pc-7+12)%12:pc));
  return withTimeline(notes.map(x=>x.rest?x:{...x,key:key||keyForShape(x.string,x.pattern)}));
 }
 export function withTimeline(notes){const meter=4;let at=0;return notes.map((n,i)=>{const value={...n,index:i,start:at,end:at+n.beats,bar:Math.floor(at/meter),meter};at+=n.beats;return value;});}
-export function noteTitle(n){return n.rest?'休み':n.chord&&n.chord.length>1?n.chord.map(x=>x.string).join('＋')+'線':n.string+'線・'+n.name;}
+export function noteTitle(n){return n.rest?'休み':n.chord&&n.chord.length>1?n.chord.map(x=>STRINGS[x.string].label).join('＋')+'線':STRINGS[n.string].label+'線・'+n.name;}
 export function instructionFor(n,previous,type){
  type=LESSONS.find(l=>l.id===type)?.exercise||type;
  if(n.rest)return type==='place'?'弓を止めて、2・3・4をまとめて置こう。':`音を止めて、${n.beats}拍休もう。`;
@@ -170,4 +180,16 @@ export function instructionFor(n,previous,type){
  if(n.finger===1&&!(pattern==='34low'&&n.string!=='A'&&n.string!=='E'))return prefix+(pattern==='34low'?`開放弦の${STRINGS[n.string].name}から半音上の、${n.name}へ。`:'1の指。同じ場所へ、戻ろう。');
  const close=shape.intervals[n.finger]-shape.intervals[n.finger-1]===1;
  return prefix+(close?`${n.finger}の指を、${n.finger-1}のすぐ隣に。`:`${n.finger-1}から全音あけて、${n.finger}の指を置こう。`);
+}
+
+// 元の固定文だけを一度変換する。makeNote・instructionFor 等の動的な名前には当てない。
+if(IS_VIOLA){
+ for(const list of [CHAPTERS,CHAPTER_SUB])for(let i=0;i<list.length;i++)list[i]=violaText(list[i]);
+ for(const list of [COMMON_MENU,VARIETY_MENU])for(const item of list){item[1]=violaText(item[1]);item[2]=violaText(item[2]);}
+ for(const shape of Object.values(PATTERNS))shape.label=violaText(shape.label);
+ for(const lesson of LESSONS){
+  lesson.title=violaText(lesson.title);lesson.sub=violaText(lesson.sub);
+  // 共通課題の説明は commonSteps が固定の部分だけを変換済み。
+  if(!lesson.exercise)lesson.steps=lesson.steps.map(step=>violaText(step));
+ }
 }

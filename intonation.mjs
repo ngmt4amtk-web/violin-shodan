@@ -1,3 +1,4 @@
+import {OPEN_MIDI,OPEN_LETTERS,OPEN_FIFTHS_FROM_A,OPEN_FIFTHS_FROM_C} from './instrument.mjs';
 // Answer Tuner Core/IntonationMath.swift・TonalContext.swift・DrillTarget.swift の数値モデル。
 // アプリでは独奏の旋律を使用。和声・他の調弦モードは移植元の数値との照合用。
 export const DIFFICULTIES={easy:15,normal:8,strict:5};
@@ -10,15 +11,15 @@ export const PYTH_RATIOS=[1,256/243,9/8,32/27,81/64,4/3,729/512,3/2,128/81,27/16
 export const JI_RATIOS=[1,16/15,9/8,6/5,5/4,4/3,45/32,3/2,8/5,5/3,9/5,15/8];
 export const STANDARD_FIFTHS=[0,-5,2,-3,4,-1,6,1,-4,3,-2,5];
 export const SCALE_FORMS={major:[0,2,4,5,7,9,11],naturalMinor:[0,2,3,5,7,8,10],harmonicMinor:[0,2,3,5,7,8,11],melodicMinor:[0,2,3,5,7,9,11]};
-const OPEN_MIDI=[55,62,69,76],OPEN_LETTERS=[4,1,5,2],LETTER_PC=[0,2,4,5,7,9,11],LETTER_FIFTHS=[0,2,4,-1,1,3,5];
+const LETTER_PC=[0,2,4,5,7,9,11],LETTER_FIFTHS=[0,2,4,-1,1,3,5];
 const TONICS=['ド','レ♭','レ','ミ♭','ミ','ファ','ファ♯','ソ','ラ♭','ラ','シ♭','シ'],KANA=['ド','レ','ミ','ファ','ソ','ラ','シ'];
 const INTERVAL_NAMES=['完全1度','短2度','長2度','短3度','長3度','完全4度','増4度','完全5度','短6度','長6度','短7度','長7度'];
 export function spelledFifthsFromC(letter,midi){if(!Number.isInteger(letter)||letter<0||letter>6)return null;let acc=mod12(midi-LETTER_PC[letter]);if(acc>6)acc-=12;return Math.abs(acc)<=2?LETTER_FIFTHS[letter]+7*acc:null;}
 export function tonalKey(pc,form='major',fifths){pc=mod12(pc);return {tonicPitchClass:pc,form,tonicFifthsFromA:fifths??(form==='major'?[-3,-8,-1,-6,1,-4,3,-2,-7,0,-5,2]:[-3,4,-1,-6,1,-4,3,-2,5,0,-5,2])[pc]};}
-export function keyForShape(string,pattern='23'){const i=['G','D','A','E'].indexOf(string),pc=mod12(OPEN_MIDI[Math.max(0,i)]);return tonalKey(pattern==='34low'?10:pc+(pattern==='12'?3:pattern==='34'?7:0));}
+export function keyForShape(string,pattern='23'){const i=['G','D','A','E'].indexOf(string),pc=mod12(OPEN_MIDI[Math.max(0,i)]);return tonalKey(pattern==='34low'?mod12(OPEN_MIDI[2]+1):pc+(pattern==='12'?3:pattern==='34'?7:0));}
 export function keyName(key){return TONICS[key.tonicPitchClass]+'長調';}
 export function targetDegreeInfo(midi,key){if(!key)return null;const semitones=mod12(midi-key.tonicPitchClass),degree=SCALE_FORMS[key.form].indexOf(semitones);if(degree>=0)return {degree,semitones};return key.form==='melodicMinor'&&[8,10].includes(semitones)?{degree:semitones===8?5:6,semitones}:null;}
-export function openStringOffset(index,mode='soloistic'){return [-2,-1,0,1][index]*(mode==='pianoAccompany'?0:mode==='stringEnsemble'?-2:FIFTH_DEVIATION);}
+export function openStringOffset(index,mode='soloistic'){return OPEN_FIFTHS_FROM_A[index]*(mode==='pianoAccompany'?0:mode==='stringEnsemble'?-2:FIFTH_DEVIATION);}
 export function openStringTargetHz(index,a4=442,mode='soloistic'){return etFreq(OPEN_MIDI[index],a4)*2**(openStringOffset(index,mode)/1200);}
 export function intervalCentsFromET(semitones,dim5=false){return {pyth:ratioCents(semitones===6&&dim5?1024/729:PYTH_RATIOS[semitones])-semitones*100,ji:ratioCents(semitones===6&&dim5?64/45:JI_RATIOS[semitones])-semitones*100};}
 export function intonationTargets(midi,{key=null,spelledLetterIdx=null,useSpelledPyth=false,mode='soloistic'}={}){
@@ -27,7 +28,7 @@ export function intonationTargets(midi,{key=null,spelledLetterIdx=null,useSpelle
  let index=3;while(index>0&&midi<OPEN_MIDI[index])index--;
  const iv=mod12(midi-OPEN_MIDI[index]),offset=openStringOffset(index,mode),dim5=iv===6&&spelledLetterIdx!==null&&(spelledLetterIdx-OPEN_LETTERS[index]+7)%7===4,c=intervalCentsFromET(iv,dim5);
  if(iv===6&&spelledLetterIdx!==null)return {ji:offset+c.ji,pyth:offset+c.pyth,ivName:dim5?'減5度':'増4度'};
- const fifths=useSpelledPyth?spelledFifthsFromC(spelledLetterIdx,midi):null,steps=fifths===null?null:fifths-[1,2,3,4][index];
+ const fifths=useSpelledPyth?spelledFifthsFromC(spelledLetterIdx,midi):null,steps=fifths===null?null:fifths-OPEN_FIFTHS_FROM_C[index];
  return {ji:offset+c.ji,pyth:offset+(steps===null?c.pyth:steps*FIFTH_DEVIATION),ivName:INTERVAL_NAMES[iv]};
 }
 export function drillGetRange(midi,{difficulty='normal',context='melodic',a4=442,...options}={}){

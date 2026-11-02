@@ -1,13 +1,27 @@
 import {STRINGS} from './content.mjs';
-import {CLEF_PATH,SHARP_PATH,FLAT_PATH,NATURAL_PATH,NOTEHEAD_PATH,WHOLE_PATH,HALF_PATH,FLAG_UP_PATH,FLAG_DOWN_PATH,REST_WHOLE_PATH,REST_HALF_PATH,REST_QUARTER_PATH,REST_EIGHTH_PATH} from './glyphs.mjs';
+import {CLEF} from './instrument.mjs';
+import {CLEF_PATH,C_CLEF_PATH,SHARP_PATH,FLAT_PATH,NATURAL_PATH,NOTEHEAD_PATH,WHOLE_PATH,HALF_PATH,FLAG_UP_PATH,FLAG_DOWN_PATH,REST_WHOLE_PATH,REST_HALF_PATH,REST_QUARTER_PATH,REST_EIGHTH_PATH} from './glyphs.mjs';
 
 export function escapeHTML(value){return String(value).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));}
 const STAFF_SPACE=11;
+// ハ音記号はト音記号より右まで幅があるので、拍子記号を5だけ右へ置く（ト音記号では0のまま）。
+const TIME_SHIFT=CLEF==='alto'?5:0;
 const svgNumber=value=>String(Math.round(value*1000)/1000);
 const pitchY=(bottom,step)=>bottom-step*STAFF_SPACE/2;
 function glyph(path,x,y,color,role){return `<path data-role="${role}" d="${path}" transform="translate(${svgNumber(x)} ${svgNumber(y)}) scale(${STAFF_SPACE})" fill="${color}"/>`;}
 // ふよみと同じ基準。ト音記号のGの中心を、下から2本目のG4の線に置く。
-function clef(x,bottom){return glyph(CLEF_PATH,x,pitchY(bottom,2),'#263d38','clef');}
+// ハ音記号は中央の線（ハの線）に原点を置くので、第1線から4つ上が基準になる。
+function clef(x,bottom){
+ if(CLEF==='alto')return glyph(C_CLEF_PATH,x,pitchY(bottom,4),'#263d38','clef');
+ return glyph(CLEF_PATH,x,pitchY(bottom,2),'#263d38','clef');
+}
+// 指番号のベースラインと表示範囲で同じ位置計算を使う。
+const fingerY=(note,bottom)=>Math.min(bottom-4*STAFF_SPACE,...(note.chord||[note]).map(n=>pitchY(bottom,n.step)-STAFF_SPACE*.5))-.52*STAFF_SPACE;
+function viewTopForFingers(notes,bottom,settings,defaultTop){
+ // バイオリンのviewBoxと出力文字列は従来どおり。文字の高さを1em＋余白2として確保する。
+ if(CLEF!=='alto'||settings.fingers===false)return defaultTop;
+ return Math.min(defaultTop,...notes.filter(n=>!n.rest).map(n=>fingerY(n,bottom)-.95*STAFF_SPACE-2));
+}
 export function noteGlyph(note,x,bottom,settings={}){
  if(note.rest){
   const rests={4:[REST_WHOLE_PATH,1.128,6],2:[REST_HALF_PATH,1.128,4],1:[REST_QUARTER_PATH,1.08,4],.5:[REST_EIGHTH_PATH,.988,4]};
@@ -35,15 +49,15 @@ export function noteGlyph(note,x,bottom,settings={}){
   if(note.beats===.5)out+=glyph(up?FLAG_UP_PATH:FLAG_DOWN_PATH,stemX-.065*STAFF_SPACE,end+(up?-.04:.132)*STAFF_SPACE,color,'flag');
  }
  if(settings.fingers!==false){
-  const top=Math.min(bottom-4*STAFF_SPACE,...tones.map(n=>pitchY(bottom,n.step)-STAFF_SPACE*.5));
-  const y=top-.52*STAFF_SPACE;
+  const y=fingerY(note,bottom);
   out+=`<text data-role="finger" x="${x}" y="${svgNumber(y)}" text-anchor="middle" font-size="${.95*STAFF_SPACE}" font-weight="700">${tones.map((n,i)=>`<tspan fill="${colorFor(n)}">${i?' · ':''}${n.finger}</tspan>`).join('')}</text>`;
  }
  return out;
 }
 export function staffLines(width,bottom=96){return Array.from({length:5},(_,i)=>`<path data-role="staff-line" d="M12 ${bottom-i*STAFF_SPACE}H${width-12}" stroke="#a1aaa3" stroke-width="${STAFF_SPACE/8}"/>`).join('');}
 export function renderSingle(note,settings={}){
- return `<svg class="single-score" viewBox="0 0 310 170" role="img" aria-label="${escapeHTML(note.rest?'休符':note.chord?.map(n=>n.name).join('と')||note.name)}、${note.beats}拍">${staffLines(310,114)}${clef(23,114)}${noteGlyph(note,177,114,settings)}${settings.names!==false?`<text x="177" y="160" text-anchor="middle" font-size="13" fill="#65746d">${escapeHTML(note.rest?'休み':note.chord?.map(n=>n.name).join(' ＋ ')||note.name)}</text>`:''}</svg>`;
+ const viewTop=viewTopForFingers([note],114,settings,0);
+ return `<svg class="single-score" viewBox="0 ${svgNumber(viewTop)} 310 ${svgNumber(170-viewTop)}" role="img" aria-label="${escapeHTML(note.rest?'休符':note.chord?.map(n=>n.name).join('と')||note.name)}、${note.beats}拍">${staffLines(310,114)}${clef(23,114)}${noteGlyph(note,177,114,settings)}${settings.names!==false?`<text x="177" y="160" text-anchor="middle" font-size="13" fill="#65746d">${escapeHTML(note.rest?'休み':note.chord?.map(n=>n.name).join(' ＋ ')||note.name)}</text>`:''}</svg>`;
 }
 export function renderScore(notes,settings={},group=0){
  const visible=group===null?notes:notes.filter(n=>n.bar>=group*4&&n.bar<group*4+4),bars=[...new Set(visible.map(n=>n.bar))];
@@ -53,15 +67,16 @@ export function renderScore(notes,settings={},group=0){
   // 選択の背景を先に描き、五線・加線・音符をその上に保つ。
   let body=ns.map(n=>`<rect data-score-index="${n.index}" class="note-highlight" x="${noteX(n)-21}" y="19" width="43" height="120" rx="12" fill="transparent"/>`).join('');
   body+=staffLines(width)+clef(14,96);
-  if(bar===0)body+=`<g data-role="time-signature" fill="#263d38" text-anchor="middle" font-family="serif" font-weight="700" font-size="24"><text x="52" y="73">${meter}</text><text x="52" y="95">4</text></g>`;
+  if(bar===0)body+=`<g data-role="time-signature" fill="#263d38" text-anchor="middle" font-family="serif" font-weight="700" font-size="24"><text x="${52+TIME_SHIFT}" y="73">${meter}</text><text x="${52+TIME_SHIFT}" y="95">4</text></g>`;
   const accidentals=new Map();
   for(const n of ns){const x=noteX(n);
    const decorate=tone=>{const alteration=tone.alteration??(tone.name.includes('♯')?1:0),previous=accidentals.get(tone.step)||0;accidentals.set(tone.step,alteration);return {...tone,accidental:alteration===1?'sharp':alteration===-1?'flat':previous!==0?'natural':null};};
    const printed=n.rest?n:n.chord?{...n,chord:n.chord.map(decorate)}:decorate(n);
-   body+=`<g data-score-index="${n.index}">${noteGlyph(printed,x,96,settings)}${settings.names!==false?`<text x="${x}" y="159" font-size="12" fill="#69756e" text-anchor="middle">${escapeHTML(n.rest?'休':n.chord?.map(z=>z.string).join('+')||n.string)}</text>`:''}</g>`;
+   body+=`<g data-score-index="${n.index}">${noteGlyph(printed,x,96,settings)}${settings.names!==false?`<text x="${x}" y="159" font-size="12" fill="#69756e" text-anchor="middle">${escapeHTML(n.rest?'休':n.chord?.map(z=>STRINGS[z.string].label).join('+')||STRINGS[n.string].label)}</text>`:''}</g>`;
   }
   body+=`<path d="M${width-12} 52V96" stroke="#66746d" stroke-width="1.2"/>`;
-  return `<svg class="score-bar" viewBox="0 0 ${width} 174" role="img" aria-label="${bar+1}小節目">${body}</svg>`;
+  const viewTop=viewTopForFingers(ns,96,settings,0);
+  return `<svg class="score-bar" viewBox="0 ${svgNumber(viewTop)} ${width} ${svgNumber(174-viewTop)}" role="img" aria-label="${bar+1}小節目">${body}</svg>`;
  }).join('');
 }
 
@@ -75,7 +90,7 @@ export function renderSystems(notes,settings={},barsPerSystem=3,layout={}){
   if(n.beats<4&&(Math.min(...steps)+Math.max(...steps))/2>=4)low+=3.5*STAFF_SPACE;
   return low+18;
  })):136;
- const viewTop=layout.compact?7:0,viewHeight=namesY+10-viewTop;
+ const viewTop=viewTopForFingers(notes,90,settings,layout.compact?7:0),viewHeight=namesY+10-viewTop;
  // 低い音の加線が増えても縦に間延びしない、横長の組段にする。
  const minimumWidth=Math.max(layout.minWidth||0,layout.compact?Math.ceil(viewHeight*3.1):0);
  for(let start=0;start<bars.length;start+=barsPerSystem){
@@ -93,12 +108,12 @@ export function renderSystems(notes,settings={},barsPerSystem=3,layout={}){
     backgrounds+=`<rect data-score-index="${n.index}" class="note-highlight" x="${nx-15}" y="23" width="30" height="99" rx="5" fill="transparent"/>`;
     const decorate=t=>{const a=t.alteration??(t.name.includes('♯')?1:t.name.includes('♭')?-1:0),prev=accidentals.get(t.step)||0;accidentals.set(t.step,a);return {...t,accidental:a===1?'sharp':a===-1?'flat':prev!==0?'natural':null};};
     const printed=n.rest?n:n.chord?{...n,chord:n.chord.map(decorate)}:decorate(n);
-    music+=`<g data-score-index="${n.index}">${noteGlyph(printed,nx,bottom,settings)}${settings.names!==false?`<text x="${nx}" y="${namesY}" text-anchor="middle" font-size="10" fill="#697384">${escapeHTML(n.rest?'休':n.chord?.map(z=>z.string).join('+')||n.string)}</text>`:''}</g>`;
+    music+=`<g data-score-index="${n.index}">${noteGlyph(printed,nx,bottom,settings)}${settings.names!==false?`<text x="${nx}" y="${namesY}" text-anchor="middle" font-size="10" fill="#697384">${escapeHTML(n.rest?'休':n.chord?.map(z=>STRINGS[z.string].label).join('+')||STRINGS[n.string].label)}</text>`:''}</g>`;
    }
    music+=`<path data-role="barline" d="M${x+bw} 46V90" stroke="#657083" stroke-width="1.2"/>`;
   }
   const meter=plans[0].ns[0].meter||4;
-  systems.push({width,label:`${group[0]+1}から${group.at(-1)+1}小節`,body:`${backgrounds}${staffLines(width,bottom)}${clef(17,bottom)}${start===0?`<g data-role="time-signature" text-anchor="middle" font-family="serif" font-weight="700" font-size="23" fill="#202839"><text x="54" y="68">${meter}</text><text x="54" y="90">4</text></g>`:''}${music}`});
+  systems.push({width,label:`${group[0]+1}から${group.at(-1)+1}小節`,body:`${backgrounds}${staffLines(width,bottom)}${clef(17,bottom)}${start===0?`<g data-role="time-signature" text-anchor="middle" font-family="serif" font-weight="700" font-size="23" fill="#202839"><text x="${54+TIME_SHIFT}" y="68">${meter}</text><text x="${54+TIME_SHIFT}" y="90">4</text></g>`:''}${music}`});
  }
  const widest=Math.max(...systems.map(s=>s.width));
  return systems.map(s=>`<svg class="score-system" viewBox="0 ${viewTop} ${svgNumber(widest)} ${svgNumber(viewHeight)}" role="img" aria-label="${s.label}">${s.body}</svg>`).join('');

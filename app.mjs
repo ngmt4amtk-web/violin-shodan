@@ -229,5 +229,17 @@ for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=
 window.addEventListener('pagehide',cleanup);
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&practice)pausePractice();});
 for(const event of ['online','offline'])window.addEventListener(event,()=>{const el=$('.offline-note');if(el)el.hidden=navigator.onLine;});
-renderHome();
+// URLの入口（2026-11-04 楽譜のQR用）。?ch=章(1〜8)&m=項目&s=弦[&f=指] で、その練習の準備画面を弦を選んだ状態で開く。
+// 形の章(02・04・05)の m は fingers・add(f=2〜4)・place・pairs・keep・pivot・triples。ほかの章は課題の id。隣の弦でも形を保つ（melody）は対象外。
+// s は内部の弦名 G・D・A・E（ビオラでは低い方から1〜4本目）。弦の欄が無い練習では s を見ない。値が合わなければ従来どおりホーム。
+const LINK_NO_STRING=['heights','cross','reading','reading55','scale','scale12','scale34'];
+function linkedLesson(search){
+ const q=new URLSearchParams(search),ch=q.get('ch')||'',m=q.get('m')||'',f=q.get('f')||'',s=(q.get('s')||'').toUpperCase();
+ if(!/^\d+$/.test(ch)||!m)return null;const unit=Number(ch)-1;if(unit<0||unit>=CHAPTERS.length)return null;
+ const found=LESSONS.find(l=>l.unit===unit&&!l.melodyId&&(l.exercise?(m==='add'?l.menu==='add'&&['2','3','4'].includes(f)&&l.exercise==='add'+f:l.menu!=='add'&&l.exercise===m):l.id===m));
+ if(!found)return null;if(LINK_NO_STRING.includes(found.type))return {id:found.id,string:null};
+ return Object.hasOwn(STRINGS,s)?{id:found.id,string:s}:null;
+}
+function openLinkedLesson(){const link=linkedLesson(location.search);if(!link)return false;enterLesson(link.id);if(link.string)options.string=link.string;view='setup';renderSetup();return true;}
+if(!openLinkedLesson())renderHome();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});

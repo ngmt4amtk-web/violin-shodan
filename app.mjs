@@ -39,7 +39,7 @@ function renderHome(){
  shell(`<section class="library"><div class="library-heading">${chapter===null?'<p class="eyebrow">開放弦から、3つの指の形へ</p><h1>何を練習しよう？</h1><p class="muted">まずは、練習したい章をひとつ。</p>':`<button class="quiet" data-action="allChapters">${icon('back')}すべての章</button><h1>${CHAPTERS[chapter]}</h1><p class="muted">${CHAPTER_SUB[chapter]}</p>`}</div><div class="${chapter===null?'chapter-list':'lesson-list'}">${list}</div><footer class="library-foot"><span>8章 · ${LESSONS.length}の練習</span><span>記録を気にせず、何度でも。</span></footer></section>`);
 }
 function renderSubList(menu){const group=chapterItems(chapter).find(l=>l.children&&l.menu===menu);if(!group){view='home';renderHome();return;}shell(`<section class="library"><div class="library-heading"><button class="quiet" data-action="chapters">${icon('back')}章の一覧</button><p class="eyebrow">${CHAPTERS[chapter]}</p><h1>${group.title}</h1></div><div class="lesson-list">${group.children.map(l=>`<button class="lesson-row" data-lesson="${l.id}"><span><strong>${l.title}</strong><small>${l.sub}</small></span><span class="chevron">›</span></button>`).join('')}</div></section>`);}
-function enterLesson(id){cleanup();lesson=LESSONS.find(l=>l.id===id)||LESSONS[0];chapter=lesson.unit;view='intro';const last=normalizeStored(readStored());options=normalizeOptions(lesson,last.lessonId===lesson.id?last.options:{},preferences.bpm);notes=makeExercise(lesson.type,options);save();renderIntro();window.scrollTo(0,0);focusHeading();}
+function enterLesson(id){cleanup();lesson=LESSONS.find(l=>l.id===id)||LESSONS[0];chapter=lesson.unit;view='intro';const last=normalizeStored(readStored());options=normalizeOptions(lesson,last.lessonId===lesson.id?last.options:{},preferences.bpm);if(linkString&&linkString.unit===lesson.unit&&!lesson.melodyId&&!LINK_NO_STRING.includes(lesson.type)){if(lesson.type==='cross')options.pair=LINK_PAIR[linkString.s];else options.string=linkString.s;}notes=makeExercise(lesson.type,options);save();renderIntro();window.scrollTo(0,0);focusHeading();}
 function patternDiagram(pattern,compact=false){const p=pattern==='34low'?'34':pattern,pair=p.split('').join('と');const caption=pattern==='34low'?(lesson?.melodyId?'開放弦と1、3と4が半音':violaText('A線の別の並び · 1も半音低く')):'つながった2本は半音、ほかは全音';return `<div class="pattern-diagram ${compact?'compact':''}" data-pattern="${pattern}"><img src="./assets/pattern-${p}.svg" width="300" height="104" alt="1・2・3・4のうち、${pair}が隣り合う図"><div><strong>${pair}<span>をくっつける</span></strong>${compact?'':`<p>${caption}</p>`}</div></div>`;}
 function setupSteps(){return lesson.exercise?commonSteps(lesson.exercise,notes.find(n=>!n.rest).pattern):lesson.steps;}
 function renderIntro(){
@@ -232,14 +232,17 @@ for(const event of ['online','offline'])window.addEventListener(event,()=>{const
 // URLの入口（2026-11-04 楽譜のQR用）。?ch=章(1〜8)&m=項目&s=弦[&f=指] で、その練習の準備画面を弦を選んだ状態で開く。
 // 形の章(02・04・05)の m は fingers・add(f=2〜4)・place・pairs・keep・pivot・triples。ほかの章は課題の id。隣の弦でも形を保つ（melody）は対象外。
 // s は内部の弦名 G・D・A・E（ビオラでは低い方から1〜4本目）。cross は s を低い方の弦とする2本の組（E は A・E）。弦の欄が無い練習では s を見ない。値が合わなければ従来どおりホーム。
+// m が無い時（?ch=7&s=A）はその章の項目の一覧を開き、このページを開いている間、その章の練習へ入る時に s の弦を選んでおく。
+let linkString=null;
 const LINK_NO_STRING=['heights','reading','reading55','scale','scale12','scale34'],LINK_PAIR={G:'GD',D:'DA',A:'AE',E:'AE'};
 function linkedLesson(search){
  const q=new URLSearchParams(search),ch=q.get('ch')||'',m=q.get('m')||'',f=q.get('f')||'',s=(q.get('s')||'').toUpperCase();
- if(!/^\d+$/.test(ch)||!m)return null;const unit=Number(ch)-1;if(unit<0||unit>=CHAPTERS.length)return null;
+ if(!/^\d+$/.test(ch))return null;const unit=Number(ch)-1;if(unit<0||unit>=CHAPTERS.length)return null;
+ if(!m)return s===''?{chapter:unit,string:null}:Object.hasOwn(STRINGS,s)?{chapter:unit,string:s}:null;
  const found=LESSONS.find(l=>l.unit===unit&&!l.melodyId&&(l.exercise?(m==='add'?l.menu==='add'&&['2','3','4'].includes(f)&&l.exercise==='add'+f:l.menu!=='add'&&l.exercise===m):l.id===m));
  if(!found)return null;if(LINK_NO_STRING.includes(found.type))return {id:found.id,string:null};if(!Object.hasOwn(STRINGS,s))return null;
  return found.type==='cross'?{id:found.id,pair:LINK_PAIR[s]}:{id:found.id,string:s};
 }
-function openLinkedLesson(){const link=linkedLesson(location.search);if(!link)return false;enterLesson(link.id);if(link.string)options.string=link.string;if(link.pair)options.pair=link.pair;view='setup';renderSetup();return true;}
+function openLinkedLesson(){const link=linkedLesson(location.search);if(!link)return false;if(link.chapter!==undefined){chapter=link.chapter;if(link.string)linkString={unit:link.chapter,s:link.string};renderHome();return true;}enterLesson(link.id);if(link.string)options.string=link.string;if(link.pair)options.pair=link.pair;view='setup';renderSetup();return true;}
 if(!openLinkedLesson())renderHome();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});

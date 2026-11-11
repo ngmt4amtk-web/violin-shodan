@@ -16,7 +16,7 @@ const TONICS=['ド','レ♭','レ','ミ♭','ミ','ファ','ファ♯','ソ','�
 const INTERVAL_NAMES=['完全1度','短2度','長2度','短3度','長3度','完全4度','増4度','完全5度','短6度','長6度','短7度','長7度'];
 export function spelledFifthsFromC(letter,midi){if(!Number.isInteger(letter)||letter<0||letter>6)return null;let acc=mod12(midi-LETTER_PC[letter]);if(acc>6)acc-=12;return Math.abs(acc)<=2?LETTER_FIFTHS[letter]+7*acc:null;}
 export function tonalKey(pc,form='major',fifths){pc=mod12(pc);return {tonicPitchClass:pc,form,tonicFifthsFromA:fifths??(form==='major'?[-3,-8,-1,-6,1,-4,3,-2,-7,0,-5,2]:[-3,4,-1,-6,1,-4,3,-2,5,0,-5,2])[pc]};}
-export function keyForShape(string,pattern='23'){const i=['G','D','A','E'].indexOf(string),pc=mod12(OPEN_MIDI[Math.max(0,i)]);return tonalKey(pattern==='34low'?mod12(OPEN_MIDI[2]+1):pc+(pattern==='12'?3:pattern==='34'?7:0));}
+export function keyForShape(string,pattern='23'){const i=['G','D','A','E'].indexOf(string),pc=mod12(OPEN_MIDI[Math.max(0,i)]);return tonalKey(pattern==='34low'?mod12(OPEN_MIDI[Math.max(0,i)]+1):pc+(pattern==='12'?3:pattern==='34'?7:0));}
 export function keyName(key){return TONICS[key.tonicPitchClass]+'長調';}
 export function targetDegreeInfo(midi,key){if(!key)return null;const semitones=mod12(midi-key.tonicPitchClass),degree=SCALE_FORMS[key.form].indexOf(semitones);if(degree>=0)return {degree,semitones};return key.form==='melodicMinor'&&[8,10].includes(semitones)?{degree:semitones===8?5:6,semitones}:null;}
 export function openStringOffset(index,mode='soloistic'){return OPEN_FIFTHS_FROM_A[index]*(mode==='pianoAccompany'?0:mode==='stringEnsemble'?-2:FIFTH_DEVIATION);}
